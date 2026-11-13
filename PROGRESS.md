@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P0 · **Next:** P0.6
+**Phase:** P0 · **Next:** P0.7
 
 Machine-readable task list. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS` **and** the commit exists.
@@ -13,7 +13,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P0.3 Gate scripts
 - [x] P0.4 Git baseline
 - [x] P0.5 Tokens, zones CSS, fallback gradient
-- [ ] P0.6 Fonts
+- [x] P0.6 Fonts
 - [ ] P0.7 Playwright and pixel helper
 - [ ] P0.8 Env contract and README
 
@@ -94,3 +94,4 @@ None.
 2026-11-13 | P0.3 | GATE: PASS (2 skipped) | P0.3 Gate scripts | big-pickle
 2026-11-13 | P0.4 | GATE: PASS (2 skipped) | P0.4 Git baseline | big-pickle
 2026-11-13 | P0.5 | GATE: PASS (2 skipped) | P0.5 Tokens, zones CSS, fallback gradient | big-pickle
+2026-11-13 | P0.6 | GATE: PASS (2 skipped) | P0.6 Fonts | big-pickle
