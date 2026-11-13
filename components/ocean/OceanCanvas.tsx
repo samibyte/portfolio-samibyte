@@ -4,7 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import { Renderer, Triangle, Program, Mesh } from "ogl";
 import { T } from "@/lib/tuning";
 import { onFrame, signal } from "@/lib/signal";
+import { ZONES, bgAt, fxAt } from "@/lib/zones";
 import { VERT, FRAG } from "./shader";
+
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace("#", "");
+  return [
+    parseInt(h.slice(0, 2), 16) / 255,
+    parseInt(h.slice(2, 4), 16) / 255,
+    parseInt(h.slice(4, 6), 16) / 255,
+  ];
+}
 
 function shouldBailOut(): boolean {
   if (typeof window === "undefined") return true;
@@ -72,28 +82,31 @@ export function OceanCanvas() {
       const gl = renderer.gl;
       geometry = new Triangle(gl);
 
+      const uBgValue: [number, number, number][] = [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+      ];
+      const uFxValue: [number, number, number, number] = [0, 0, 0, 0];
+      const uMouseValue: [number, number] = [-1, -1];
+      const skyRgb = hexToRgb(ZONES[0].bgTop);
+
       const uniforms = {
         uTime: { value: 0 },
-        uWaterline: { value: 0.7 },
-        uTurb: { value: 0 },
-        uPlunge: { value: -1 },
-        uMouseVel: { value: 0 },
-        uAspect: { value: 1 },
-        uOct: { value: T.octaves },
-        uRipple: { value: T.ripple },
-        uMouse: { value: [-1, -1] },
-        uSky: { value: [135 / 255, 206 / 255, 235 / 255] },
-        uBg: {
-          value: [
-            [135 / 255, 206 / 255, 235 / 255],
-            [0 / 255, 206 / 255, 209 / 255],
-            [0 / 255, 206 / 255, 209 / 255],
-            [51 / 255, 159 / 255, 168 / 255],
-            [26 / 255, 58 / 255, 92 / 255],
-          ],
-        },
-        uFx: { value: [0, 0, 0, 0] },
-        uDebug: { value: 0 },
+        uWaterline: { value: 0.7 as number },
+        uTurb: { value: 0 as number },
+        uPlunge: { value: -1 as number },
+        uMouseVel: { value: 0 as number },
+        uAspect: { value: 1 as number },
+        uOct: { value: T.octaves as number },
+        uRipple: { value: T.ripple as number },
+        uMouse: { value: uMouseValue },
+        uSky: { value: skyRgb },
+        uBg: { value: uBgValue },
+        uFx: { value: uFxValue },
+        uDebug: { value: 0 as number },
       };
 
       program = new Program(gl, {
@@ -106,6 +119,14 @@ export function OceanCanvas() {
 
       let lastWidth = -1;
       let lastHeight = -1;
+      let rawPointerX = -1;
+      let rawPointerY = -1;
+
+      const onPointerMove = (e: PointerEvent) => {
+        rawPointerX = e.clientX;
+        rawPointerY = e.clientY;
+      };
+      window.addEventListener("pointermove", onPointerMove, { passive: true });
 
       const resize = () => {
         if (!renderer) return;
@@ -141,13 +162,66 @@ export function OceanCanvas() {
 
       const unsubscribe = onFrame(() => {
         if (!renderer) return;
-        uniforms.uTime.value = signal.time;
+
+        const scrollY = signal.scrollY;
+        const vh = window.innerHeight || 1;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+
+        // 1. uBg - filled in place each frame from bgAt() at viewport rows scrollY + [0, .25, .5, .75, 1] * vh, top-down
+        const rows = [0, 0.25, 0.5, 0.75, 1];
+        for (let i = 0; i < 5; i++) {
+          const rgb = bgAt(scrollY + rows[i] * vh);
+          uBgValue[i][0] = rgb[0];
+          uBgValue[i][1] = rgb[1];
+          uBgValue[i][2] = rgb[2];
+        }
+
+        // 2. uSky = surface bgTop, uAspect = w / h
+        uniforms.uAspect.value = w / Math.max(1, h);
+
+        // 3. uFx - reals from fxAt(scrollY + vh / 2)
+        const fx = fxAt(scrollY + vh * 0.5);
+        uFxValue[0] = fx[0];
+        uFxValue[1] = fx[1];
+        uFxValue[2] = fx[2];
+        uFxValue[3] = fx[3];
+
+        // 4. uMouse - [x / w, 1 - y / h], init (-1, -1). uMouseVel from pointer spring
+        if (rawPointerX >= 0 && rawPointerY >= 0 && w > 0 && h > 0) {
+          uMouseValue[0] = rawPointerX / w;
+          uMouseValue[1] = 1 - rawPointerY / h;
+        } else {
+          uMouseValue[0] = -1;
+          uMouseValue[1] = -1;
+        }
+        uniforms.uMouseVel.value = signal.pointerSpring.x;
+
+        // 5. uOct - T.octaves normally, 2 in low tier
+        uniforms.uOct.value = signal.coarse ? 2 : T.octaves;
+
+        // 6. uTime - signal.time (0 under reduced motion)
+        uniforms.uTime.value = signal.reduced ? 0 : signal.time;
+
+        // 7. uRipple - T.ripple, scaled by pointer spring; 0 in Tier 2 and under reduced motion
+        if (signal.coarse || signal.reduced) {
+          uniforms.uRipple.value = 0;
+        } else {
+          uniforms.uRipple.value = T.ripple * Math.max(0, signal.pointerSpring.x);
+        }
+
+        // 8. uTurb & uWaterline
+        uniforms.uTurb.value = Math.abs(signal.scrollSpring.x);
+        const isHome = window.location.pathname === "/";
+        uniforms.uWaterline.value = isHome ? 0.7 + scrollY / vh : 2.0;
+
         renderer.render({ scene: mesh });
       });
 
       return () => {
         cancelAnimationFrame(raf);
         unsubscribe();
+        window.removeEventListener("pointermove", onPointerMove);
         window.removeEventListener("resize", resize);
         program?.remove?.();
         geometry?.remove();
