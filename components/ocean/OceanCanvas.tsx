@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Renderer, Triangle, Program, Mesh } from "ogl";
 import { T } from "@/lib/tuning";
 import { onFrame, signal } from "@/lib/signal";
@@ -53,18 +53,25 @@ function shouldBailOut(): boolean {
 }
 
 export function OceanCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [visible, setVisible] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (shouldBailOut()) return;
 
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!container) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.setAttribute("aria-hidden", "true");
+    canvas.className =
+      "fixed inset-0 z-0 pointer-events-none opacity-0 transition-opacity duration-[400ms] ease-in-out";
+    container.appendChild(canvas);
 
     let renderer: Renderer | null = null;
     let geometry: Triangle | null = null;
     let program: Program | null = null;
+    let unsubscribe: (() => void) | null = null;
+    let raf = 0;
 
     try {
       const activeDpr = signal.coarse
@@ -80,6 +87,12 @@ export function OceanCanvas() {
       });
 
       const gl = renderer.gl;
+      if (!gl || gl.isContextLost()) {
+        signal.webglOk = false;
+        canvas.remove();
+        return;
+      }
+
       geometry = new Triangle(gl);
 
       const uBgValue: [number, number, number][] = [
@@ -114,6 +127,12 @@ export function OceanCanvas() {
         fragment: FRAG,
         uniforms,
       });
+
+      if (!gl.getProgramParameter(program.program, gl.LINK_STATUS)) {
+        signal.webglOk = false;
+        canvas.remove();
+        return;
+      }
 
       const mesh = new Mesh(gl, { geometry, program });
 
@@ -156,12 +175,13 @@ export function OceanCanvas() {
       window.addEventListener("resize", resize);
 
       // Mount after first paint and fade in over 400 ms via CSS opacity
-      const raf = requestAnimationFrame(() => {
-        setVisible(true);
+      raf = requestAnimationFrame(() => {
+        canvas.classList.remove("opacity-0");
+        canvas.classList.add("opacity-100");
       });
 
-      const unsubscribe = onFrame(() => {
-        if (!renderer) return;
+      unsubscribe = onFrame(() => {
+        if (!renderer || renderer.gl.isContextLost()) return;
 
         const scrollY = signal.scrollY;
         const vh = window.innerHeight || 1;
@@ -215,22 +235,34 @@ export function OceanCanvas() {
         const isHome = window.location.pathname === "/";
         uniforms.uWaterline.value = isHome ? 0.7 + scrollY / vh : 2.0;
 
+        // 9. uPlunge - seconds since plungeStartedAt for T.plungeDuration, else -1
+        if (signal.plungeStartedAt > 0) {
+          const elapsed = performance.now() / 1000 - signal.plungeStartedAt;
+          uniforms.uPlunge.value =
+            elapsed >= 0 && elapsed <= T.plungeDuration ? elapsed : -1;
+        } else {
+          uniforms.uPlunge.value = -1;
+        }
+
         renderer.render({ scene: mesh });
       });
 
       return () => {
         cancelAnimationFrame(raf);
-        unsubscribe();
+        if (unsubscribe) unsubscribe();
         window.removeEventListener("pointermove", onPointerMove);
         window.removeEventListener("resize", resize);
         program?.remove?.();
         geometry?.remove();
         renderer?.gl.getExtension("WEBGL_lose_context")?.loseContext();
         renderer = null;
+        if (canvas.parentNode) {
+          canvas.parentNode.removeChild(canvas);
+        }
       };
     } catch {
       signal.webglOk = false;
-      if (canvas) canvas.style.display = "none";
+      if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
     }
   }, []);
 
@@ -239,12 +271,10 @@ export function OceanCanvas() {
   }
 
   return (
-    <canvas
-      ref={canvasRef}
+    <div
+      ref={containerRef}
       aria-hidden="true"
-      className={`fixed inset-0 z-0 pointer-events-none transition-opacity duration-[400ms] ease-in-out ${
-        visible ? "opacity-100" : "opacity-0"
-      }`}
+      className="fixed inset-0 z-0 pointer-events-none"
     />
   );
 }

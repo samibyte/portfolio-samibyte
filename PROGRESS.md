@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P2 · **Next:** P2.7
+**Phase:** P2 · **Next:** P2.8
 
 Machine-readable task list. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS` **and** the commit exists.
@@ -44,7 +44,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P2.4 OceanCanvas
 - [x] P2.5 Shader core, flow, foam
 - [x] P2.6 Uniform wiring
-- [ ] P2.7 Waterline and plunge
+- [x] P2.7 Waterline and plunge
 - [ ] P2.8 Reduced motion and `?fx=off`
 - [ ] P2.9 C1 test
 
@@ -121,3 +121,4 @@ None.
 2026-11-14 | P2.4 | GATE: PASS; canvas mounts, ?fx=off bails out, 0 errors | P2.4 OceanCanvas | big-pickle
 2026-11-14 | P2.5 | GATE: PASS; shader core, flow, foam visible, 0 errors | P2.5 Shader core, flow, foam | big-pickle
 2026-11-14 | P2.6 | GATE: PASS; continuous gradient surface to abyss verified | P2.6 Uniform wiring | big-pickle
+2026-11-14 | P2.7 | GATE: PASS; waterline & plunge wired, context lifecycle fixed | P2.7 Waterline and plunge | flash
