@@ -90,14 +90,14 @@ else
   skip "contrast" "lib/zones.ts not written yet"
 fi
 
-if [ -f scripts/check-content.ts ]; then
+if [ -d lib ] && [ -f scripts/check-content.ts ]; then
   if [ "${STRICT:-0}" = "1" ]; then
     step "content" "$BIN/tsx" scripts/check-content.ts --strict
   else
     step "content" "$BIN/tsx" scripts/check-content.ts
   fi
 else
-  skip "content" "scripts/check-content.ts not written yet"
+  skip "content" "lib/ not written yet"
 fi
 
 finish

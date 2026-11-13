@@ -8,7 +8,7 @@ Do not renumber. Do not delete a row. Split a hard task into `<ID>a`, `<ID>b` an
 Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `next-task.sh` says the heading is missing, stop and report.
 
 ## P0 Scaffold
-- [ ] P0.1 Scaffold the app at the repo root
+- [x] P0.1 Scaffold the app at the repo root
 - [ ] P0.2 Pin versions and scripts
 - [ ] P0.3 Gate scripts
 - [ ] P0.4 Git baseline
