@@ -24,7 +24,7 @@ export function Nav() {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 top-0 z-10 bg-[var(--panel)]"
+      className="fixed top-3 left-1/2 z-10 w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 rounded-2xl bg-[var(--panel)]"
     >
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3">
         <Link
