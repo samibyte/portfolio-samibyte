@@ -1,8 +1,14 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, type ReactNode } from "react";
 import { measure } from "@/lib/layout";
 import { signal, start, stop } from "@/lib/signal";
+
+const OceanCanvas = dynamic(
+  () => import("./OceanCanvas").then((mod) => mod.OceanCanvas),
+  { ssr: false },
+);
 
 declare global {
   interface Window {
@@ -56,5 +62,10 @@ export function OceanProvider({ children }: { children?: ReactNode }) {
     };
   }, []);
 
-  return children ? <>{children}</> : null;
+  return (
+    <>
+      <OceanCanvas />
+      {children}
+    </>
+  );
 }
