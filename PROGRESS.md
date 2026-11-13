@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P1 · **Next:** P1.13
+**Phase:** P1 · **Next:** P1.14
 
 Machine-readable task list. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS` **and** the commit exists.
@@ -30,7 +30,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P1.10 Projects + ProjectCard (static)
 - [x] P1.11 About
 - [x] P1.12 Skills
-- [ ] P1.13 Contact + ContactForm
+- [x] P1.13 Contact + ContactForm
 - [ ] P1.14 `/api/contact`
 - [ ] P1.15 Case-study route
 - [ ] P1.16 OG image
@@ -109,3 +109,4 @@ None.
 2026-11-14 | P1.10 | GATE: PASS; 4 cards, 0 image requests | P1.10 Projects + ProjectCard (static) | big-pickle
 2026-11-14 | P1.11 | GATE: PASS; 4 bio / 4 principles / 4 journey | P1.11 About | big-pickle
 2026-11-14 | P1.12 | GATE: PASS; 5 groups, 29 data-skill items | P1.12 Skills | big-pickle
+2026-11-14 | P1.13 | GATE: PASS; 3/labels linked; invalid 3×aria-invalid; 404→error status; 200 stub→success status | P1.13 Contact + ContactForm | big-pickle
