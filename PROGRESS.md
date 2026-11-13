@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P2 · **Next:** P2.9
+**Phase:** P3 · **Next:** P3.1
 
 Machine-readable task list. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS` **and** the commit exists.
@@ -46,7 +46,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P2.6 Uniform wiring
 - [x] P2.7 Waterline and plunge
 - [x] P2.8 Reduced motion and `?fx=off`
-- [ ] P2.9 C1 test
+- [x] P2.9 C1 test
 
 ## P3 Depth
 - [ ] P3.1 Contrast script
@@ -123,3 +123,4 @@ None.
 2026-11-14 | P2.6 | GATE: PASS; continuous gradient surface to abyss verified | P2.6 Uniform wiring | big-pickle
 2026-11-14 | P2.7 | GATE: PASS; waterline & plunge wired, context lifecycle fixed | P2.7 Waterline and plunge | flash
 2026-11-14 | P2.8 | GATE: PASS; reduced motion static render, ?fx=off bailout, EffectsToggle stub | P2.8 Reduced motion and `?fx=off` | flash
+2026-11-14 | P2.9 | GATE: PASS; npx playwright test tests/c1.spec.ts 4 passed (effects on & ?fx=off) | P2.9 C1 test | flash
