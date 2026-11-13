@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P0 · **Next:** P0.3
+**Phase:** P0 · **Next:** P0.4
 
 Machine-readable task list. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS` **and** the commit exists.
@@ -10,7 +10,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 ## P0 Scaffold
 - [x] P0.1 Scaffold the app at the repo root
 - [x] P0.2 Pin versions and scripts
-- [ ] P0.3 Gate scripts
+- [x] P0.3 Gate scripts
 - [ ] P0.4 Git baseline
 - [ ] P0.5 Tokens, zones CSS, fallback gradient
 - [ ] P0.6 Fonts
@@ -91,3 +91,4 @@ None.
 ## Session log
 <!-- one line per session: date | task | gate | commit | model -->
 2026-11-13 | P0.2 | GATE: PASS (2 skipped) | P0.2 Pin versions and scripts | big-pickle
+2026-11-13 | P0.3 | GATE: PASS (2 skipped) | P0.3 Gate scripts | big-pickle
