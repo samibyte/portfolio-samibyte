@@ -58,6 +58,13 @@ export function stepSpring(
 
 function checkReduced(): boolean {
   if (typeof window === "undefined") return false;
+  try {
+    const stored = localStorage.getItem("ocean-fx");
+    if (stored === "off") return true;
+    if (stored === "on") return false;
+  } catch {
+    // localStorage may be unavailable in some sandboxes/modes
+  }
   return Boolean(
     typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches,

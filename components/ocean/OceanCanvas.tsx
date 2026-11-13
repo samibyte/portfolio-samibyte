@@ -23,18 +23,7 @@ function shouldBailOut(): boolean {
   const params = new URLSearchParams(window.location.search);
   if (params.get("fx") === "off") return true;
 
-  // 2. prefers-reduced-motion without explicit opt-in
-  const reducedMotion = Boolean(
-    typeof window.matchMedia === "function" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  );
-  const optedIn =
-    typeof localStorage !== "undefined" &&
-    localStorage.getItem("ocean-fx") === "on";
-
-  if (reducedMotion && !optedIn) return true;
-
-  // 3. WebGL2 availability check
+  // 2. WebGL2 availability check
   try {
     const testCanvas = document.createElement("canvas");
     const gl2 =
@@ -140,6 +129,12 @@ export function OceanCanvas() {
       let lastHeight = -1;
       let rawPointerX = -1;
       let rawPointerY = -1;
+      let hasRendered = false;
+      let lastRenderScrollY = -1;
+      let lastRenderVh = -1;
+      let lastRenderW = -1;
+      let lastRenderH = -1;
+      let lastRenderIsHome: boolean | null = null;
 
       const onPointerMove = (e: PointerEvent) => {
         rawPointerX = e.clientX;
@@ -244,7 +239,27 @@ export function OceanCanvas() {
           uniforms.uPlunge.value = -1;
         }
 
+        // Under reduced motion, render only when a value changed (static at rest)
+        if (signal.reduced) {
+          if (
+            hasRendered &&
+            scrollY === lastRenderScrollY &&
+            vh === lastRenderVh &&
+            w === lastRenderW &&
+            h === lastRenderH &&
+            isHome === lastRenderIsHome
+          ) {
+            return;
+          }
+        }
+
         renderer.render({ scene: mesh });
+        hasRendered = true;
+        lastRenderScrollY = scrollY;
+        lastRenderVh = vh;
+        lastRenderW = w;
+        lastRenderH = h;
+        lastRenderIsHome = isHome;
       });
 
       return () => {
