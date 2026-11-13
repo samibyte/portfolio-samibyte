@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P2 · **Next:** P2.1
+**Phase:** P2 · **Next:** P2.2
 
 Machine-readable task list. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS` **and** the commit exists.
@@ -38,7 +38,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P1.18 Home page composition
 
 ## P2 Signal, water, waterline
-- [ ] P2.1 `lib/layout.ts`
+- [x] P2.1 `lib/layout.ts`
 - [ ] P2.2 `lib/signal.ts`
 - [ ] P2.3 OceanProvider
 - [ ] P2.4 OceanCanvas
@@ -115,3 +115,4 @@ None.
 2026-11-14 | P1.16 | GATE: PASS; /opengraph-image 200 image/png 1200x630 | P1.16 OG image | big-pickle
 2026-11-14 | P1.17 | GATE: PASS; default 0/exit 0; strict [USER] exit 1; scripts/ ignored | P1.17 `scripts/check-content.ts` | big-pickle
 2026-11-14 | P1.18 | GATE: PASS; 5 zones in order; 4 gaps 25vh/0 text; 1 main, no transform | P1.18 Home page composition | big-pickle
+2026-11-14 | P2.1 | GATE: PASS; 5 sections measured | P2.1 lib/layout.ts | big-pickle
