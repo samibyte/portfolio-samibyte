@@ -1,0 +1,3 @@
+Follow `AGENTS.md`. Start with `bash scripts/next-task.sh`; do only that task; run `npm run gate` before ticking the box.
+
+Read `SPEC.md`, `phases/*`, or `skills/*` only when the task names a section or a skill. Never judge a screenshot — assert numbers in a Playwright spec. Never close a **U** item.
