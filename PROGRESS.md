@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P1 · **Next:** P1.2
+**Phase:** P1 · **Next:** P1.3
 
 Machine-readable task list. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS` **and** the commit exists.
@@ -19,7 +19,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 
 ## P1 Content and layout (no WebGL)
 - [x] P1.1 `lib/types.ts`
-- [ ] P1.2 `lib/tuning.ts`
+- [x] P1.2 `lib/tuning.ts`
 - [ ] P1.3 `lib/zones.ts`
 - [ ] P1.4 `lib/content.ts`
 - [ ] P1.5 `lib/projects.ts`
@@ -98,3 +98,4 @@ None.
 2026-11-13 | P0.7 | GATE: PASS (2 skipped); shots 2 passed, 6 files | P0.7 Playwright and pixel helper | big-pickle
 2026-11-13 | P0.8 | GATE: PASS (2 skipped); dev HTTP 200 | P0.8 Env contract and README | big-pickle
 2026-11-14 | P1.1 | GATE: PASS (1 skipped) | P1.1 lib/types.ts | big-pickle
+2026-11-14 | P1.2 | GATE: PASS (1 skipped) | P1.2 lib/tuning.ts | big-pickle
