@@ -4,24 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Renderer, Triangle, Program, Mesh } from "ogl";
 import { T } from "@/lib/tuning";
 import { onFrame, signal } from "@/lib/signal";
-
-const VERT = `
-attribute vec2 position;
-attribute vec2 uv;
-varying vec2 vUv;
-void main() {
-  vUv = uv;
-  gl_Position = vec4(position, 0.0, 1.0);
-}
-`;
-
-const FRAG = `
-precision highp float;
-varying vec2 vUv;
-void main() {
-  gl_FragColor = vec4(0.0, 0.5, 0.8, 1.0);
-}
-`;
+import { VERT, FRAG } from "./shader";
 
 function shouldBailOut(): boolean {
   if (typeof window === "undefined") return true;
@@ -88,22 +71,48 @@ export function OceanCanvas() {
 
       const gl = renderer.gl;
       geometry = new Triangle(gl);
+
+      const uniforms = {
+        uTime: { value: 0 },
+        uWaterline: { value: 0.7 },
+        uTurb: { value: 0 },
+        uPlunge: { value: -1 },
+        uMouseVel: { value: 0 },
+        uAspect: { value: 1 },
+        uOct: { value: T.octaves },
+        uRipple: { value: T.ripple },
+        uMouse: { value: [-1, -1] },
+        uSky: { value: [135 / 255, 206 / 255, 235 / 255] },
+        uBg: {
+          value: [
+            [135 / 255, 206 / 255, 235 / 255],
+            [0 / 255, 206 / 255, 209 / 255],
+            [0 / 255, 206 / 255, 209 / 255],
+            [51 / 255, 159 / 255, 168 / 255],
+            [26 / 255, 58 / 255, 92 / 255],
+          ],
+        },
+        uFx: { value: [0, 0, 0, 0] },
+        uDebug: { value: 0 },
+      };
+
       program = new Program(gl, {
         vertex: VERT,
         fragment: FRAG,
+        uniforms,
       });
 
       const mesh = new Mesh(gl, { geometry, program });
 
-      let lastWidth = window.innerWidth;
-      let lastHeight = window.innerHeight;
+      let lastWidth = -1;
+      let lastHeight = -1;
 
       const resize = () => {
         if (!renderer) return;
         const w = window.innerWidth;
         const h = window.innerHeight;
 
-        if (signal.coarse) {
+        if (signal.coarse && lastWidth > 0 && lastHeight > 0) {
           const isHeightOnly = w === lastWidth;
           if (isHeightOnly && Math.abs(h - lastHeight) < 120) {
             return;
@@ -119,6 +128,7 @@ export function OceanCanvas() {
 
         renderer.dpr = dpr;
         renderer.setSize(w, h);
+        uniforms.uAspect.value = w / Math.max(1, h);
       };
 
       resize();
@@ -131,6 +141,7 @@ export function OceanCanvas() {
 
       const unsubscribe = onFrame(() => {
         if (!renderer) return;
+        uniforms.uTime.value = signal.time;
         renderer.render({ scene: mesh });
       });
 

@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P2 · **Next:** P2.5
+**Phase:** P2 · **Next:** P2.6
 
 Machine-readable task list. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS` **and** the commit exists.
@@ -42,7 +42,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P2.2 `lib/signal.ts`
 - [x] P2.3 OceanProvider
 - [x] P2.4 OceanCanvas
-- [ ] P2.5 Shader core, flow, foam
+- [x] P2.5 Shader core, flow, foam
 - [ ] P2.6 Uniform wiring
 - [ ] P2.7 Waterline and plunge
 - [ ] P2.8 Reduced motion and `?fx=off`
@@ -119,3 +119,4 @@ None.
 2026-11-14 | P2.2 | GATE: PASS; stepSpring pure verified (60fps 1.3755, 30fps 1.3707, settled 1.0000) | P2.2 lib/signal.ts | big-pickle
 2026-11-14 | P2.3 | GATE: PASS; --vh set, loop running without canvas | P2.3 OceanProvider | big-pickle
 2026-11-14 | P2.4 | GATE: PASS; canvas mounts, ?fx=off bails out, 0 errors | P2.4 OceanCanvas | big-pickle
+2026-11-14 | P2.5 | GATE: PASS; shader core, flow, foam visible, 0 errors | P2.5 Shader core, flow, foam | big-pickle
