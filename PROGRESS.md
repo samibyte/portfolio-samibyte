@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P1 · **Next:** P1.10
+**Phase:** P1 · **Next:** P1.11
 
 Machine-readable task list. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS` **and** the commit exists.
@@ -27,7 +27,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P1.7 `app/layout.tsx`
 - [x] P1.8 Nav
 - [x] P1.9 Hero
-- [ ] P1.10 Projects + ProjectCard (static)
+- [x] P1.10 Projects + ProjectCard (static)
 - [ ] P1.11 About
 - [ ] P1.12 Skills
 - [ ] P1.13 Contact + ContactForm
@@ -106,3 +106,4 @@ None.
 2026-11-14 | P1.7 | GATE: PASS; skip link first Tab | P1.7 app/layout.tsx | big-pickle
 2026-11-14 | P1.8 | GATE: PASS; desktop 6 links, mobile 2 taps | P1.8 Nav | big-pickle
 2026-11-14 | P1.9 | GATE: PASS; boundary 30.00% / 29.98% | P1.9 Hero | big-pickle
+2026-11-14 | P1.10 | GATE: PASS; 4 cards, 0 image requests | P1.10 Projects + ProjectCard (static) | big-pickle
