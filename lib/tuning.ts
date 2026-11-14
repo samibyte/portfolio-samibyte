@@ -4,7 +4,8 @@ export const T = {
   dtMax: 1 / 20, // clamp after a background tab
   dprMax: 2, dprMid: 1.5, dprLow: 1,
   fpsLow: 30, fpsMid: 45, warmupS: 2,
-  snowMax: 20, glowMax: 8, bubbleMax: 24, octaves: 4,
+  snowMax: 20, glowMax: 8, bubbleMax: 24, octaves: 4, octavesLow: 2,
+  snowLow: 0.5,
   plungeDuration: 3, // s
   gapVh: 25, // empty band between sections
   bobPx: 8,

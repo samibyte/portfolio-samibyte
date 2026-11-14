@@ -13,7 +13,98 @@ export interface SignalState {
   reduced: boolean;
   coarse: boolean;
   webglOk: boolean;
+  tier: QualityTier;
+  fxOff: boolean;
+  adaptiveLow: boolean;
+  forcedTier: QualityTier | null;
   plungeStartedAt: number;
+}
+
+export type QualityTier = 0 | 1 | 2 | 3 | 4;
+
+export interface TierInputs {
+  fxOff: boolean;
+  webglOk: boolean;
+  reduced: boolean;
+  coarse: boolean;
+  width: number;
+  adaptiveLow: boolean;
+  forced: QualityTier | null;
+}
+
+export interface TierSettings {
+  canvas: boolean;
+  static: boolean;
+  dprCap: number;
+  octaves: number;
+  snowScale: number;
+  glow: boolean;
+  ripple: boolean;
+}
+
+/**
+ * Pure tier decision (P6.1). Precedence: no canvas (4) > reduced motion (3) >
+ * coarse/narrow (2) > adaptive-low (1) > full (0).
+ */
+export function decideTier(input: TierInputs): QualityTier {
+  if (input.forced !== null) return input.forced;
+  if (input.fxOff || !input.webglOk) return 4;
+  if (input.reduced) return 3;
+  if (input.coarse || input.width < 768) return 2;
+  if (input.adaptiveLow) return 1;
+  return 0;
+}
+
+const TIER_SETTINGS: readonly TierSettings[] = [
+  {
+    canvas: true,
+    static: false,
+    dprCap: T.dprMax,
+    octaves: T.octaves,
+    snowScale: 1,
+    glow: true,
+    ripple: true,
+  },
+  {
+    canvas: true,
+    static: false,
+    dprCap: T.dprLow,
+    octaves: T.octavesLow,
+    snowScale: T.snowLow,
+    glow: true,
+    ripple: true,
+  },
+  {
+    canvas: true,
+    static: false,
+    dprCap: T.dprLow,
+    octaves: T.octavesLow,
+    snowScale: 0,
+    glow: false,
+    ripple: false,
+  },
+  {
+    canvas: true,
+    static: true,
+    dprCap: T.dprMax,
+    octaves: T.octaves,
+    snowScale: 1,
+    glow: true,
+    ripple: false,
+  },
+  {
+    canvas: false,
+    static: true,
+    dprCap: 0,
+    octaves: 0,
+    snowScale: 0,
+    glow: false,
+    ripple: false,
+  },
+];
+
+export function tierSettings(tier: QualityTier): TierSettings {
+  return TIER_SETTINGS[tier];
 }
 
 export const signal: SignalState = {
@@ -27,7 +118,21 @@ export const signal: SignalState = {
   reduced: false,
   coarse: false,
   webglOk: true,
+  tier: 0,
+  fxOff: false,
+  adaptiveLow: false,
+  forcedTier: null,
   plungeStartedAt: -1,
+};
+
+const tierInputs: TierInputs = {
+  fxOff: false,
+  webglOk: true,
+  reduced: false,
+  coarse: false,
+  width: 1280,
+  adaptiveLow: false,
+  forced: null,
 };
 
 type FrameListener = (dt: number) => void;
@@ -81,6 +186,45 @@ function checkCoarse(): boolean {
   return Boolean(matchCoarse || window.innerWidth < 768);
 }
 
+function readFxOff(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("fx") === "off";
+}
+
+/** Dev-only override: `?tier=0…4` (P6.1 evidence). Never active in production. */
+export function readForcedTier(): QualityTier | null {
+  if (typeof window === "undefined") return null;
+  if (process.env.NODE_ENV !== "development") return null;
+
+  const raw = new URLSearchParams(window.location.search).get("tier");
+  if (raw === null || raw === "") return null;
+
+  const value = Number(raw);
+  return Number.isInteger(value) && value >= 0 && value <= 4
+    ? (value as QualityTier)
+    : null;
+}
+
+/** Re-read environment flags and recompute the tier. */
+export function refreshTier(): QualityTier {
+  signal.reduced = checkReduced();
+  signal.coarse = checkCoarse();
+  signal.fxOff = readFxOff();
+  signal.forcedTier = readForcedTier();
+
+  signal.tier = decideTier({
+    fxOff: signal.fxOff,
+    webglOk: signal.webglOk,
+    reduced: signal.reduced,
+    coarse: signal.coarse,
+    width: typeof window === "undefined" ? 1280 : window.innerWidth,
+    adaptiveLow: signal.adaptiveLow,
+    forced: signal.forcedTier,
+  });
+
+  return signal.tier;
+}
+
 function onPointerMove(e: PointerEvent): void {
   if (e.isPrimary ?? true) {
     rawPointerX = e.clientX;
@@ -107,7 +251,18 @@ function loop(now: number): void {
   signal.reduced = checkReduced();
   signal.coarse = checkCoarse();
 
-  if (signal.reduced) {
+  tierInputs.fxOff = signal.fxOff;
+  tierInputs.webglOk = signal.webglOk;
+  tierInputs.reduced = signal.reduced;
+  tierInputs.coarse = signal.coarse;
+  tierInputs.width = window.innerWidth;
+  tierInputs.adaptiveLow = signal.adaptiveLow;
+  tierInputs.forced = signal.forcedTier;
+  signal.tier = decideTier(tierInputs);
+
+  const isStatic = signal.tier >= 3;
+
+  if (isStatic) {
     signal.time = 0;
     signal.scrollSpring = { x: 0, v: 0 };
     signal.pointerSpring = { x: 0, v: 0 };
@@ -173,6 +328,7 @@ export function start(): void {
 
   signal.reduced = checkReduced();
   signal.coarse = checkCoarse();
+  refreshTier();
 
   const vh = window.innerHeight;
   const initialScrollY = window.scrollY || window.pageYOffset || 0;

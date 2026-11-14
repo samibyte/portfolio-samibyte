@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P5 · **Next:** P6.1
+**Phase:** P6 · **Next:** P6.2
 
 Machine-readable task list. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS` **and** the commit exists.
@@ -70,7 +70,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P5.5 Case-study dive and ascent
 
 ## P6 Performance, fallback, accessibility
-- [ ] P6.1 Quality tiers
+- [x] P6.1 Quality tiers
 - [ ] P6.2 Adaptive quality
 - [ ] P6.3 Effects toggle
 - [ ] P6.4 No-WebGL fallback
@@ -132,3 +132,4 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 2026-11-14 | P5.3 | GATE: PASS; Skills torch wired inside main loop via onFrame, cached centers, --glow scoped | P5.3 Skills torch | flash
 2026-11-14 | P5.4 | GATE: PASS; zones surface→sunlight→twilight→midnight→abyss (4 changes, 4 live mutations), meters 15→687→4944 m, marker 0→57.6→100% | P5.4 DiveLine | deepseek-v4.1-flash-free
 2026-11-14 | P5.5 | GATE: PASS; case-study luma 0.1887→0.0132→0.0047→0.0156→0.0209; ascent 1999→0 in 100 ms (reduced) / 1810 at 150 ms →0 (normal); lantern 256 px, meanB−meanR 14.08, +0.47 mean red; c2 2 passed. C4 red is the pre-existing P5.3 transition issue in Blockers | P5.5 Case-study dive and ascent | deepseek-v4.1-flash-free
+2026-11-14 | P6.1 | GATE: PASS; c7 42 passed; dev ?tier=0…4: tier 0 dpr2 2560×1440, tiers 1/2 dpr1 1280×720, tier 3 time 0 full dpr, tier 4 no canvas + 5 sections, 0 errors; extra file OceanCanvas.tsx | P6.1 Quality tiers | deepseek-v4.1-flash-free

@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { Renderer, Triangle, Program, Mesh } from "ogl";
 import { T } from "@/lib/tuning";
-import { onFrame, signal } from "@/lib/signal";
+import { onFrame, signal, refreshTier, tierSettings, readForcedTier } from "@/lib/signal";
 import { ZONES, bgAt, fxAt } from "@/lib/zones";
 import { VERT, FRAG } from "./shader";
 
@@ -18,6 +18,9 @@ function hexToRgb(hex: string): [number, number, number] {
 
 function shouldBailOut(): boolean {
   if (typeof window === "undefined") return true;
+
+  // 0. Dev-only tier override that removes the canvas (tier 4).
+  if (readForcedTier() === 4) return true;
 
   // 1. ?fx=off
   const params = new URLSearchParams(window.location.search);
@@ -50,6 +53,10 @@ export function OceanCanvas() {
     const container = containerRef.current;
     if (!container) return;
 
+    refreshTier();
+    const initialSettings = tierSettings(signal.tier);
+    if (!initialSettings.canvas) return;
+
     const canvas = document.createElement("canvas");
     canvas.setAttribute("aria-hidden", "true");
     canvas.className =
@@ -63,9 +70,10 @@ export function OceanCanvas() {
     let raf = 0;
 
     try {
-      const activeDpr = signal.coarse
-        ? T.dprLow
-        : Math.min(window.devicePixelRatio || 1, T.dprMax);
+      const activeDpr = Math.min(
+        window.devicePixelRatio || 1,
+        initialSettings.dprCap,
+      );
 
       renderer = new Renderer({
         canvas,
@@ -102,8 +110,8 @@ export function OceanCanvas() {
         uPlunge: { value: -1 as number },
         uMouseVel: { value: 0 as number },
         uAspect: { value: 1 as number },
-        uOct: { value: T.octaves as number },
-        uRipple: { value: T.ripple as number },
+        uOct: { value: initialSettings.octaves as number },
+        uRipple: { value: initialSettings.ripple ? T.ripple : 0 },
         uMouse: { value: uMouseValue },
         uSky: { value: skyRgb },
         uBg: { value: uBgValue },
@@ -150,9 +158,10 @@ export function OceanCanvas() {
         lastWidth = w;
         lastHeight = h;
 
-        const dpr = signal.coarse
-          ? T.dprLow
-          : Math.min(window.devicePixelRatio || 1, T.dprMax);
+        const dpr = Math.min(
+          window.devicePixelRatio || 1,
+          tierSettings(signal.tier).dprCap,
+        );
 
         renderer.dpr = dpr;
         renderer.setSize(w, h);
@@ -179,6 +188,7 @@ export function OceanCanvas() {
       unsubscribe = onFrame(() => {
         if (!renderer || renderer.gl.isContextLost()) return;
 
+        const settings = tierSettings(signal.tier);
         const scrollY = signal.scrollY;
         const vh = window.innerHeight || 1;
         const w = window.innerWidth;
@@ -200,8 +210,8 @@ export function OceanCanvas() {
         const fx = fxAt(scrollY + vh * 0.5);
         uFxValue[0] = fx[0];
         uFxValue[1] = fx[1];
-        uFxValue[2] = fx[2];
-        uFxValue[3] = fx[3];
+        uFxValue[2] = fx[2] * settings.snowScale;
+        uFxValue[3] = settings.glow ? fx[3] : 0;
 
         // 4. uMouse - [x / w, 1 - y / h], init (-1, -1). uMouseVel from pointer spring
         const px = signal.pointer.x;
@@ -220,18 +230,14 @@ export function OceanCanvas() {
         }
         uniforms.uMouseVel.value = signal.pointerSpring.x;
 
-        // 5. uOct - T.octaves normally, 2 in low tier
-        uniforms.uOct.value = signal.coarse ? 2 : T.octaves;
+        // 5. uOct - T.octaves at full quality, T.octavesLow in tiers 1 and 2
+        uniforms.uOct.value = settings.octaves;
 
-        // 6. uTime - signal.time (0 under reduced motion)
-        uniforms.uTime.value = signal.reduced ? 0 : signal.time;
+        // 6. uTime - signal.time, 0 in tiers 3 and 4 (static)
+        uniforms.uTime.value = settings.static ? 0 : signal.time;
 
-        // 7. uRipple - T.ripple; 0 in Tier 2 and under reduced motion
-        if (signal.coarse || signal.reduced) {
-          uniforms.uRipple.value = 0;
-        } else {
-          uniforms.uRipple.value = T.ripple;
-        }
+        // 7. uRipple - T.ripple at full/adaptive quality, 0 in tiers 2-4
+        uniforms.uRipple.value = settings.ripple ? T.ripple : 0;
 
         // 8. uTurb & uWaterline (P4.2: uTurb = |x|, settles in <3s, continuous on reversal)
         uniforms.uTurb.value = Math.abs(signal.scrollSpring.x);
@@ -247,8 +253,8 @@ export function OceanCanvas() {
           uniforms.uPlunge.value = -1;
         }
 
-        // Under reduced motion, render only when a value changed (static at rest)
-        if (signal.reduced) {
+        // Static tiers render only when a value changed (no animation)
+        if (settings.static) {
           if (
             hasRendered &&
             scrollY === lastRenderScrollY &&
