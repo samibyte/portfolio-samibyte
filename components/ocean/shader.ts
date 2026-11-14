@@ -63,6 +63,29 @@ void main() {
   // Layer 1: Flow
   water += (fbm(uv * vec2(2.5, 1.5) + vec2(t * 0.05, 0.0)) - 0.5) * 0.08 * (1.0 + uTurb);
 
+  // Layer 2: Caustics — two passes of abs(sin) lattice on warped uv, strength uFx.y * vUv.y (multiply only)
+  if (uFx.y > 0.001) {
+    float n1 = (noise(uv * 3.0 + vec2(t * 0.05, 0.0)) - 0.5) * 0.5;
+    float n2 = (noise(uv * 4.5 - vec2(0.0, t * 0.05)) - 0.5) * 0.5;
+    vec2 cUv1 = uv * 8.0 + vec2(t * 0.15 + n1, t * 0.1 + n1 * 0.7);
+    vec2 cUv2 = uv * 13.0 - vec2(t * 0.1 - n2 * 0.7, t * 0.15 + n2);
+    float c1 = abs(sin(cUv1.x + sin(cUv1.y * 1.2)));
+    float c2 = abs(sin(cUv2.y + sin(cUv2.x * 1.2)));
+    float caustics = (c1 + c2) * 0.5;
+    water *= 1.0 + caustics * (uFx.y * vUv.y * 0.6);
+  }
+
+  // Layer 3: God rays — soft bands along uv.x + (uWaterline - uv.y) * 0.3, slow sway, strength uFx.x
+  if (uFx.x > 0.001) {
+    float rayAngle = uv.x + (uWaterline - uv.y) * 0.3;
+    float sway = sin(t * 0.4 + uv.y * 2.0) * 0.04;
+    float rayCoord = rayAngle + sway;
+    float rayNoise = noise(vec2(rayCoord * 3.5, t * 0.08));
+    float rayBand = sin(rayCoord * 10.0 + rayNoise * 2.0) * 0.5 + 0.5;
+    float rays = smoothstep(0.25, 0.75, rayBand) * (0.4 + 0.6 * clamp(vUv.y, 0.0, 1.0));
+    water += vec3(0.12, 0.18, 0.22) * (rays * uFx.x);
+  }
+
   // Layer 7: Foam — thin bright line at wl, only when uWaterline is on screen
   if (uWaterline > -0.1 && uWaterline < 1.2) {
     float foamDist = abs(uv.y - wl);
