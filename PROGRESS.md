@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P5 · **Next:** P5.4
+**Phase:** P5 · **Next:** P5.5
 
 Machine-readable task list. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS` **and** the commit exists.
@@ -66,7 +66,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P5.1 BuoyChip
 - [x] P5.2 ProjectCard motion
 - [x] P5.3 Skills torch
-- [ ] P5.4 DiveLine
+- [x] P5.4 DiveLine
 - [ ] P5.5 Case-study dive and ascent
 
 ## P6 Performance, fallback, accessibility
@@ -130,3 +130,4 @@ None.
 2026-11-14 | P5.1 | GATE: PASS; BuoyChip created & mounted in Hero at 30% vh, bob wave tracked, no layout shift | P5.1 BuoyChip | flash
 2026-11-14 | P5.2 | GATE: PASS; ProjectCard motion via CSS ping ring & Architecture on hover/focus-within | P5.2 ProjectCard motion | flash
 2026-11-14 | P5.3 | GATE: PASS; Skills torch wired inside main loop via onFrame, cached centers, --glow scoped | P5.3 Skills torch | flash
+2026-11-14 | P5.4 | GATE: PASS; zones surface→sunlight→twilight→midnight→abyss (4 changes, 4 live mutations), meters 15→687→4944 m, marker 0→57.6→100% | P5.4 DiveLine | deepseek-v4.1-flash-free
