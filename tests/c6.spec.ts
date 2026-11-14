@@ -437,3 +437,82 @@ test.describe("P6.5: accessibility pass", () => {
     }
   });
 });
+
+test.describe("C6: Projects, Resume and Contact reachable without scrolling", () => {
+  for (const suffix of ["", "?fx=off"]) {
+    const mode = suffix === "" ? "effects on" : "?fx=off";
+
+    test(`${mode}: clickable from a cold load at scroll 0`, async ({ page }) => {
+      await page.goto(`/${suffix}`);
+      await page.waitForLoadState("networkidle");
+
+      // Cold load: the page has not been scrolled at all.
+      expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+      const viewport = page.viewportSize() ?? { width: 1280, height: 720 };
+
+      // In-page anchors. Desktop clicks the fixed nav directly; mobile needs
+      // one tap on Menu plus one tap on the link (≤ 2 taps).
+      for (const { label, hash } of [
+        { label: "Projects", hash: "#projects" },
+        { label: "Contact", hash: "#contact" },
+      ]) {
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await openMobileMenu(page);
+
+        const link = page
+          .locator("nav")
+          .getByRole("link", { name: label, exact: true })
+          .first();
+        await expect(link).toBeVisible();
+
+        const rect = await link.boundingBox();
+        if (!rect) throw new Error(`${label} has no bounding box`);
+        expect(rect.y, `${label} is above the viewport`).toBeGreaterThanOrEqual(
+          0,
+        );
+        expect(
+          rect.y + rect.height,
+          `${label} is below the viewport`,
+        ).toBeLessThanOrEqual(viewport.height);
+        expect(
+          await page.evaluate(() => window.scrollY),
+          `${label} must be clickable without scrolling`,
+        ).toBe(0);
+
+        await link.click();
+        await expect
+          .poll(() => page.evaluate(() => window.location.hash))
+          .toBe(hash);
+      }
+
+      // Resume is external and opens in a new tab.
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await openMobileMenu(page);
+      const resume = page
+        .locator("nav")
+        .getByRole("link", { name: "Resume", exact: true })
+        .first();
+      await expect(resume).toBeVisible();
+
+      const rect = await resume.boundingBox();
+      if (!rect) throw new Error("Resume has no bounding box");
+      expect(rect.y, "Resume is above the viewport").toBeGreaterThanOrEqual(0);
+      expect(
+        rect.y + rect.height,
+        "Resume is below the viewport",
+      ).toBeLessThanOrEqual(viewport.height);
+      expect(
+        await page.evaluate(() => window.scrollY),
+        "Resume must be clickable without scrolling",
+      ).toBe(0);
+      await expect(resume).toHaveAttribute("href", /^https?:\/\//);
+
+      const [popup] = await Promise.all([
+        page.waitForEvent("popup"),
+        resume.click(),
+      ]);
+      await expect.poll(() => popup.url()).toMatch(/^https?:\/\//);
+    });
+  }
+});
