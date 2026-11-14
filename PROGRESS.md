@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P6 · **Next:** P6.6
+**Phase:** P7 · **Next:** P7.1
 
 Machine-readable task list. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS` **and** the commit exists.
@@ -77,7 +77,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P6.4a Fix C4 skill-chip contrast
 - [x] P6.5 Accessibility pass
 - [x] P6.6 C5 and C6 tests
-- [ ] P6.7 Lighthouse
+- [x] P6.7 Lighthouse
 
 ## P7 Launch
 - [ ] P7.1 Resolve content slots
@@ -140,3 +140,4 @@ None.
 2026-11-14 | P6.4a | GATE: PASS; c4 2 passed (desktop + mobile); removed `transition-colors duration-150` from `[data-skill]` chips; `[data-chrome]` toggle excluded from C4 background screenshots alongside nav; Blockers now None | P6.4a Fix C4 skill-chip contrast | deepseek-v4.1-flash-free
 2026-11-14 | P6.5 | GATE: PASS; c6 18 passed (9 per project): 24×24 targets on / and /projects/stitchlogic, Tab pass with no trap / invisible / obscured focus and a 2 px zone-coloured ring, skip link focuses main, anchor jump clears the nav, form errors linked, skills announced once, canvas aria-hidden, aria-current; c1/c2/c3/c4/c7 69 passed (1 skipped); anchor test verified red without scroll-margin. Unrelated WIP redesign preserved in stash@{0} | P6.5 Accessibility pass | deepseek-v4.1-flash-free
 2026-11-14 | P6.6 | GATE: PASS; c5+c6 34 passed (both projects): c5 no transform on main, ≤1 canvas (1 on /, 0 on ?fx=off), wheel not defaultPrevented; c6 Projects/Resume/Contact clickable at scroll 0, effects on and ?fx=off, mobile ≤2 taps | P6.6 C5 and C6 tests | openrouter-free
+2026-11-14 | P6.7 | GATE: PASS; Lighthouse 13.6.0/Chrome 157, ?fx=off, mobile: / and /projects/stitchlogic 100/100/100/100 (perf/a11y/bp/seo) ≥ thresholds 90/95/95/95 as lhci error assertions; canvas-on informational 100s; qa/lh reports + qa/REPORT.md saved; D-194 | P6.7 Lighthouse | openrouter-free
