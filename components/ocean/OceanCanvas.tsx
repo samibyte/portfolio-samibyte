@@ -225,7 +225,7 @@ export function OceanCanvas() {
           uniforms.uRipple.value = T.ripple * Math.max(0, signal.pointerSpring.x);
         }
 
-        // 8. uTurb & uWaterline
+        // 8. uTurb & uWaterline (P4.2: uTurb = |x|, settles in <3s, continuous on reversal)
         uniforms.uTurb.value = Math.abs(signal.scrollSpring.x);
         const isHome = window.location.pathname === "/";
         uniforms.uWaterline.value = isHome ? 0.7 + scrollY / vh : 2.0;

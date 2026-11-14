@@ -59,7 +59,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 
 ## P4 Physics and interaction
 - [x] P4.1 Spring unit test
-- [ ] P4.2 Turbulence
+- [x] P4.2 Turbulence
 - [ ] P4.3 Pointer
 
 ## P5 Content blending
