@@ -75,6 +75,7 @@ export function EffectsToggle() {
   return (
     <button
       type="button"
+      data-chrome="effects-toggle"
       aria-pressed={reduced}
       onClick={toggle}
       className={`fixed bottom-3 right-3 z-10 rounded-full border px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e0e8f0] ${

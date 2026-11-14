@@ -143,7 +143,7 @@ test.describe("C4: Rendered text contrast across zones", () => {
       // Make text transparent and hide fixed nav to screenshot the zone background
       const styleHandle = await page.addStyleTag({
         content:
-          "[data-zone] * { color: transparent !important; } nav { display: none !important; }",
+          "[data-zone] * { color: transparent !important; } nav, [data-chrome] { display: none !important; }",
       });
       await page.waitForTimeout(50);
 

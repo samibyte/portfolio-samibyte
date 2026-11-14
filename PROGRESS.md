@@ -74,6 +74,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P6.2 Adaptive quality
 - [x] P6.3 Effects toggle
 - [x] P6.4 No-WebGL fallback
+- [x] P6.4a Fix C4 skill-chip contrast
 - [ ] P6.5 Accessibility pass
 - [ ] P6.6 C5 and C6 tests
 - [ ] P6.7 Lighthouse
@@ -86,7 +87,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [ ] P7.5 Final gate
 
 ## Blockers
-- Pre-existing C4 regression from P5.3 (not P5.5): `npx playwright test tests/c4.spec.ts` fails in both projects with `Zone "midnight", text "TypeScript" (15px, weight 400): contrast 3.31 < 4.5`. Cause: P5.3 added `transition-colors duration-150` to every `[data-skill]` chip; C4 hides text with `color: transparent !important` and screenshots 50 ms later, so the 150 ms colour transition leaves the glyphs partly visible in the sample. Running the same C4 logic with `prefers-reduced-motion: reduce` (global `transition: none`) reports 0 failures, including Contact. Proposed one-line fix in a separate task: drop `transition-colors duration-150` from the skill chip; the torch writes `--glow` per frame and already provides the transition.
+None.
 
 ## Session log
 <!-- one line per session: date | task | gate | commit | model -->
@@ -136,3 +137,4 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 2026-11-14 | P6.2 | GATE: PASS; c7 57 passed (1 skipped mobile); 4× CPU throttling lands on tier 1 and renders | P6.2 Adaptive quality | flash-high
 2026-11-14 | P6.3 | GATE: PASS; button "Reduce motion" aria-pressed false→true, localStorage off, tier 0→3, signal.time 1.335→0, canvas pixels identical while frozen, same <main> and <canvas>; reload persists; Enter/Space toggle; media-reduce starts pressed and "on" overrides it; c7 57 passed (1 skipped); extra file app/layout.tsx. C4 blocker unchanged | P6.3 Effects toggle | deepseek-v4.1-flash-free
 2026-11-14 | P6.4 | GATE: PASS; c6 6 passed (both projects) covering ?fx=off, missing WebGL2 and webglcontextlost: no canvas, 5 zones, form and link navigation; c1 4 passed, c2 2 passed; moved P6.3 toggle to bottom-right because bottom-left broke C1 at x=1%; C4 blocker unchanged | P6.4 No-WebGL fallback | deepseek-v4.1-flash-free
+2026-11-14 | P6.4a | GATE: PASS; c4 2 passed (desktop + mobile); removed `transition-colors duration-150` from `[data-skill]` chips; `[data-chrome]` toggle excluded from C4 background screenshots alongside nav; Blockers now None | P6.4a Fix C4 skill-chip contrast | deepseek-v4.1-flash-free

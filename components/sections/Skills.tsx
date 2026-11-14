@@ -121,7 +121,7 @@ export function Skills() {
                       boxShadow:
                         "0 0 calc(var(--glow, 0) * 16px) color-mix(in srgb, var(--accent) calc(var(--glow, 0) * 40%), transparent)",
                     }}
-                    className="rounded-full border border-[var(--text)]/25 px-3 py-1.5 text-[length:var(--fs-sm)] text-[var(--text)] transition-colors duration-150"
+                    className="rounded-full border border-[var(--text)]/25 px-3 py-1.5 text-[length:var(--fs-sm)] text-[var(--text)]"
                   >
                     {item}
                   </li>
