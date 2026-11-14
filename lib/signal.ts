@@ -18,6 +18,8 @@ export interface SignalState {
   adaptiveLow: boolean;
   forcedTier: QualityTier | null;
   plungeStartedAt: number;
+  dprCap: number;
+  fps: number;
 }
 
 export type QualityTier = 0 | 1 | 2 | 3 | 4;
@@ -104,7 +106,56 @@ const TIER_SETTINGS: readonly TierSettings[] = [
 ];
 
 export function tierSettings(tier: QualityTier): TierSettings {
-  return TIER_SETTINGS[tier];
+  const base = TIER_SETTINGS[tier];
+  if (tier === 0 && signal.dprCap < base.dprCap) {
+    return { ...base, dprCap: signal.dprCap };
+  }
+  return base;
+}
+
+export interface AdaptiveState {
+  adaptiveLow: boolean;
+  dprCap: number;
+}
+
+/**
+ * Pure calculation of mean frame time over an array of frame durations in seconds.
+ */
+export function computeMeanFrameTime(durations: readonly number[]): number {
+  if (durations.length === 0) return 0;
+  let sum = 0;
+  for (let i = 0; i < durations.length; i++) {
+    sum += durations[i];
+  }
+  return sum / durations.length;
+}
+
+/**
+ * Pure evaluation of adaptive quality thresholds (P6.2).
+ * If fps < T.fpsLow (30) → tier 1 (adaptiveLow = true, dprCap <= T.dprLow).
+ * Else if fps < T.fpsMid (45) → DPR T.dprMid (dprCap <= T.dprMid).
+ * Never upgrade mid-session: quality only degrades.
+ */
+export function evaluateFps(
+  fps: number,
+  current: AdaptiveState,
+): AdaptiveState {
+  if (fps < T.fpsLow) {
+    return {
+      adaptiveLow: true,
+      dprCap: Math.min(current.dprCap, T.dprLow),
+    };
+  }
+  if (fps < T.fpsMid) {
+    return {
+      adaptiveLow: current.adaptiveLow,
+      dprCap: Math.min(current.dprCap, T.dprMid),
+    };
+  }
+  return {
+    adaptiveLow: current.adaptiveLow,
+    dprCap: current.dprCap,
+  };
 }
 
 export const signal: SignalState = {
@@ -123,6 +174,8 @@ export const signal: SignalState = {
   adaptiveLow: false,
   forcedTier: null,
   plungeStartedAt: -1,
+  dprCap: T.dprMax,
+  fps: 60,
 };
 
 const tierInputs: TierInputs = {
@@ -143,6 +196,17 @@ let rafId: number | null = null;
 let lastTime = 0;
 let initialChecked = false;
 let plungeEligible = false;
+let sessionStartTime = -1;
+let frameHistory: Array<{ now: number; dt: number }> = [];
+
+export function resetAdaptiveQuality(): void {
+  signal.adaptiveLow = false;
+  signal.dprCap = T.dprMax;
+  signal.fps = 60;
+  sessionStartTime = -1;
+  frameHistory = [];
+  refreshTier();
+}
 
 let prevScrollY = 0;
 let rawPointerX = -1;
@@ -235,7 +299,22 @@ function onPointerMove(e: PointerEvent): void {
 function loop(now: number): void {
   if (!running) return;
 
-  const dt = Math.min((now - lastTime) / 1000, T.dtMax);
+  if (sessionStartTime < 0) {
+    sessionStartTime = now;
+  }
+
+  if (
+    typeof window !== "undefined" &&
+    (process.env.NODE_ENV === "development" ||
+      (window as unknown as { __ENABLE_OCEAN_DEBUG__?: boolean })
+        .__ENABLE_OCEAN_DEBUG__) &&
+    !(window as unknown as { __ocean?: SignalState }).__ocean
+  ) {
+    (window as unknown as { __ocean?: SignalState }).__ocean = signal;
+  }
+
+  const rawDt = lastTime > 0 ? (now - lastTime) / 1000 : 0;
+  const dt = Math.min(rawDt > 0 ? rawDt : 1 / 60, T.dtMax);
   lastTime = now;
 
   const scrollY = window.scrollY || window.pageYOffset || 0;
@@ -259,6 +338,49 @@ function loop(now: number): void {
   tierInputs.adaptiveLow = signal.adaptiveLow;
   tierInputs.forced = signal.forcedTier;
   signal.tier = decideTier(tierInputs);
+
+  // Adaptive quality (P6.2): rolling 2 s mean frame time measured only after T.warmupS
+  const elapsedMs = now - sessionStartTime;
+  const warmupMs = T.warmupS * 1000;
+  const windowMs = 2000;
+
+  if (elapsedMs >= warmupMs) {
+    if (rawDt > 0 && rawDt < 1.0) {
+      frameHistory.push({ now, dt: rawDt });
+    }
+
+    while (frameHistory.length > 0 && frameHistory[0].now < now - windowMs) {
+      frameHistory.shift();
+    }
+
+    if (elapsedMs >= warmupMs + windowMs && frameHistory.length >= 2) {
+      let sumDt = 0;
+      for (let i = 0; i < frameHistory.length; i++) {
+        sumDt += frameHistory[i].dt;
+      }
+      const meanFrameTime = sumDt / frameHistory.length;
+      const currentFps = meanFrameTime > 0 ? 1 / meanFrameTime : 60;
+      signal.fps = currentFps;
+
+      const next = evaluateFps(currentFps, {
+        adaptiveLow: signal.adaptiveLow,
+        dprCap: signal.dprCap,
+      });
+
+      const changed =
+        next.adaptiveLow !== signal.adaptiveLow ||
+        next.dprCap !== signal.dprCap;
+
+      if (changed) {
+        signal.adaptiveLow = next.adaptiveLow;
+        signal.dprCap = next.dprCap;
+        refreshTier();
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("resize"));
+        }
+      }
+    }
+  }
 
   const isStatic = signal.tier >= 3;
 
@@ -326,6 +448,17 @@ export function start(): void {
   if (running) return;
   running = true;
 
+  sessionStartTime = -1;
+  frameHistory = [];
+
+  if (
+    process.env.NODE_ENV === "development" ||
+    (window as unknown as { __ENABLE_OCEAN_DEBUG__?: boolean })
+      .__ENABLE_OCEAN_DEBUG__
+  ) {
+    (window as unknown as { __ocean?: SignalState }).__ocean = signal;
+  }
+
   signal.reduced = checkReduced();
   signal.coarse = checkCoarse();
   refreshTier();
@@ -350,6 +483,8 @@ export function start(): void {
 export function stop(): void {
   if (!running) return;
   running = false;
+  sessionStartTime = -1;
+  frameHistory = [];
 
   if (rafId !== null && typeof window !== "undefined") {
     window.cancelAnimationFrame(rafId);
