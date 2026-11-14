@@ -95,6 +95,11 @@ h6 {
   --bg-bot: #020408;
 }
 
+/* No-canvas fallback: each zone paints its own static gradient (P6.4). */
+body:not(:has(canvas)) [data-zone] {
+  background: linear-gradient(to bottom, var(--bg-top), var(--bg-bot));
+}
+
 /* Hero fallback: hard 30/70 split while no canvas is mounted (?fx=off, no WebGL). */
 body:not(:has(canvas)) [data-zone="surface"] {
   background: linear-gradient(

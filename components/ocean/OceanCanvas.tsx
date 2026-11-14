@@ -63,6 +63,20 @@ export function OceanCanvas() {
       "fixed inset-0 z-0 pointer-events-none opacity-0 transition-opacity duration-[400ms] ease-in-out";
     container.appendChild(canvas);
 
+    let disposed = false;
+    const onContextLost = (event: Event) => {
+      if (disposed) return;
+      event.preventDefault();
+      signal.webglOk = false;
+      refreshTier();
+      if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = null;
+      }
+      if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
+    };
+    canvas.addEventListener("webglcontextlost", onContextLost);
+
     let renderer: Renderer | null = null;
     let geometry: Triangle | null = null;
     let program: Program | null = null;
@@ -277,9 +291,11 @@ export function OceanCanvas() {
       });
 
       return () => {
+        disposed = true;
         cancelAnimationFrame(raf);
         if (unsubscribe) unsubscribe();
         window.removeEventListener("resize", resize);
+        canvas.removeEventListener("webglcontextlost", onContextLost);
         program?.remove?.();
         geometry?.remove();
         renderer?.gl.getExtension("WEBGL_lose_context")?.loseContext();

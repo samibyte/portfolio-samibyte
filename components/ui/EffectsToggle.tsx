@@ -77,7 +77,7 @@ export function EffectsToggle() {
       type="button"
       aria-pressed={reduced}
       onClick={toggle}
-      className={`fixed bottom-3 left-3 z-10 rounded-full border px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e0e8f0] ${
+      className={`fixed bottom-3 right-3 z-10 rounded-full border px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e0e8f0] ${
         reduced
           ? "border-[#e0e8f0] bg-[#e0e8f0] text-[#0a1628]"
           : "border-[#e0e8f0]/40 bg-[var(--panel)] text-[#e0e8f0] hover:border-[#e0e8f0]"
