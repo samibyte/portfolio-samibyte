@@ -119,7 +119,18 @@ function clamp01(value: number): number {
 }
 
 function smoothstep(t: number): number {
-  return t * t * (3 - 2 * t);
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
+  const w = 0.1;
+  const k = 1 / (1 - w);
+  if (t < w) {
+    return 0.5 * k * ((t * t) / w);
+  } else if (t < 1 - w) {
+    return 0.5 * k * w + k * (t - w);
+  } else {
+    const u = (1 - t) / w;
+    return 1 - 0.5 * k * (u * u * w);
+  }
 }
 
 function mix(

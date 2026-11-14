@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P3 · **Next:** P3.7
+**Phase:** P4 · **Next:** P4.1
 
 Machine-readable task list. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS` **and** the commit exists.
@@ -55,7 +55,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P3.4 Abyss glow
 - [x] P3.5 Plunge bubbles
 - [x] P3.6 Depth verification
-- [ ] P3.7 Zone text polish
+- [x] P3.7 Zone text polish
 
 ## P4 Physics and interaction
 - [ ] P4.1 Spring unit test
@@ -125,3 +125,4 @@ None.
 2026-11-14 | P2.8 | GATE: PASS; reduced motion static render, ?fx=off bailout, EffectsToggle stub | P2.8 Reduced motion and `?fx=off` | flash
 2026-11-14 | P2.9 | GATE: PASS; npx playwright test tests/c1.spec.ts 4 passed (effects on & ?fx=off) | P2.9 C1 test | flash
 2026-11-14 | P3.6 | GATE: PASS; tests c2 and c4 passed (10 passed) | P3.6 Depth verification | flash
+2026-11-14 | P3.7 | GATE: PASS; Node check bgAt maxDelta 0.0196 < 0.02, 0 text in gaps | P3.7 Zone text polish | flash
