@@ -115,6 +115,31 @@ void main() {
     water += vec3(0.12, 0.15, 0.18) * (clamp(snowAcc, 0.0, 1.0) * uFx.z);
   }
 
+  // Layer 5: Abyss glow — soft pulsing points, count uFx.w * T.glowMax (8), cool #35e0c2
+  if (uFx.w > 0.001) {
+    float glowCount = uFx.w * 8.0;
+    float glowWander = (noise(uv * 1.5 + vec2(t * 0.05, 0.0)) - 0.5) * 0.02;
+    float glowAcc = 0.0;
+    for (int i = 0; i < 8; i++) {
+      if (float(i) >= glowCount) break;
+      float fi = float(i);
+      float h1 = hash(vec2(fi * 3.7 + 0.5, fi * 1.9 + 0.3));
+      float h2 = hash(vec2(fi * 2.1 + 0.7, fi * 4.3 + 0.1));
+      float col = mod(fi, 4.0);
+      float row = floor(fi / 4.0);
+      vec2 basePos = vec2((col + 0.2 + 0.6 * h1) / 4.0, (row + 0.2 + 0.6 * h2) / 2.0);
+      vec2 pos = basePos + vec2(sin(t * 0.3 + fi * 1.7) * 0.03 + glowWander, cos(t * 0.25 + fi * 1.3) * 0.03);
+      vec2 d = (uv - pos) * vec2(uAspect, 1.0);
+      float dist = length(d);
+      float pulse = sin(t * 1.2 + fi * 2.3) * 0.35 + 0.65;
+      float point = smoothstep(0.06, 0.0, dist);
+      glowAcc += point * point * pulse;
+    }
+    // Cool #35e0c2 (53, 224, 194), max luminance lift < 0.06
+    vec3 glowColor = vec3(0.208, 0.878, 0.761);
+    water += glowColor * (clamp(glowAcc, 0.0, 1.0) * (0.07 * uFx.w));
+  }
+
   // Layer 7: Foam — thin bright line at wl, only when uWaterline is on screen
   if (uWaterline > -0.1 && uWaterline < 1.2) {
     float foamDist = abs(uv.y - wl);
