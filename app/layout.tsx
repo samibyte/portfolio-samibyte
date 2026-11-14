@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Instrument_Serif } from "next/font/google";
 import { Nav } from "@/components/ui/Nav";
 import { DiveLine } from "@/components/ui/DiveLine";
+import { EffectsToggle } from "@/components/ui/EffectsToggle";
 import { OceanProvider } from "@/components/ocean/OceanProvider";
 import { content } from "@/lib/content";
 import "./globals.css";
@@ -53,7 +54,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {/* Chrome slots: EffectsToggle (P6.3). */}
         <Nav />
         <DiveLine />
-        <div id="effects-toggle-slot" />
+        <EffectsToggle />
         <main id="main-content" className="z-1 flex flex-1 flex-col">
           {children}
         </main>
