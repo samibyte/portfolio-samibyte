@@ -140,6 +140,41 @@ void main() {
     water += glowColor * (clamp(glowAcc, 0.0, 1.0) * (0.07 * uFx.w));
   }
 
+  // Layer 6: Plunge bubbles — <= 24 bubbles, analytic from hash(float(i)), driven by uPlunge
+  if (uPlunge >= 0.0) {
+    float lifeFade = smoothstep(0.0, 0.15, uPlunge) * (1.0 - smoothstep(2.0, 3.0, uPlunge));
+    float bubbleTurb = (noise(uv * 4.0 + vec2(0.0, -t * 0.2)) - 0.5) * 0.006;
+    float bubbleAcc = 0.0;
+    for (int i = 0; i < 24; i++) {
+      if (float(i) >= 24.0) break;
+      float fi = float(i);
+      float h1 = hash(vec2(fi * 4.13 + 0.1, fi * 2.71 + 0.5));
+      float h2 = hash(vec2(fi * 1.97 + 0.3, fi * 5.39 + 0.7));
+      float h3 = hash(vec2(fi * 3.31 + 0.9, fi * 1.43 + 0.2));
+      float h4 = hash(vec2(fi * 2.57 + 0.4, fi * 3.89 + 0.8));
+
+      float startX = 0.15 + 0.7 * h1;
+      float wobble = sin(uPlunge * 6.0 + h4 * 6.28) * (0.008 + 0.01 * h2);
+      float bubbleX = startX + wobble + bubbleTurb;
+
+      float pushDepth = (0.15 + 0.25 * h2) * exp(-uPlunge * 1.8) * uPlunge * 2.5;
+      float rise = (0.12 + 0.18 * h3) * uPlunge;
+      float bubbleY = uWaterline - 0.02 - pushDepth + rise;
+
+      float underWl = 1.0 - smoothstep(uWaterline - 0.005, uWaterline, bubbleY);
+      vec2 delta = (uv - vec2(bubbleX, bubbleY)) * vec2(uAspect, 1.0);
+      float dist = length(delta);
+      float r = mix(0.003, 0.009, h3);
+
+      float ring = smoothstep(r, r * 0.75, dist) * smoothstep(r * 0.5, r * 0.75, dist);
+      float center = smoothstep(r * 0.4, 0.0, dist) * 0.3;
+      bubbleAcc += (ring * 1.2 + center) * underWl;
+    }
+    // Colour is text-adjacent, never pure white (C4 allowance)
+    vec3 bubbleColor = vec3(0.70, 0.85, 0.95);
+    water += bubbleColor * (clamp(bubbleAcc, 0.0, 1.0) * (0.25 * lifeFade));
+  }
+
   // Layer 7: Foam — thin bright line at wl, only when uWaterline is on screen
   if (uWaterline > -0.1 && uWaterline < 1.2) {
     float foamDist = abs(uv.y - wl);
