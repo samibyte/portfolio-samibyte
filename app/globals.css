@@ -56,6 +56,26 @@ h6 {
   outline-offset: 2px;
 }
 
+/*
+ * SC 2.4.11 Focus Not Obscured: keyboard focus scrolls clear of the fixed nav
+ * (72 px) and the sticky case-study bar (bottom 201 px on desktop,
+ * 193 px on mobile). See tests/c6.spec.ts.
+ */
+a[href],
+button,
+input,
+select,
+textarea,
+summary,
+[tabindex]:not([tabindex="-1"]) {
+  scroll-margin-top: 13rem;
+}
+
+/* In-page anchors clear the fixed nav only. */
+[id] {
+  scroll-margin-top: 5rem;
+}
+
 [data-zone] {
   color: var(--text);
 }

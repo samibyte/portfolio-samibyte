@@ -30,7 +30,7 @@ export function Nav() {
         <Link
           href="/"
           aria-current={isHome ? "page" : undefined}
-          className={`font-[family-name:var(--font-display)] text-lg ${TEXT} ${FOCUS}`}
+          className={`font-[family-name:var(--font-display)] text-lg ${TEXT} ${FOCUS} py-1`}
         >
           {content.name}
         </Link>
@@ -45,7 +45,7 @@ export function Nav() {
                     ? "page"
                     : undefined
                 }
-                className={`text-sm ${TEXT} hover:text-white ${FOCUS}`}
+                className={`block py-1 text-sm ${TEXT} hover:text-white ${FOCUS}`}
               >
                 {link.label}
               </Link>
@@ -56,7 +56,7 @@ export function Nav() {
               href={content.resumeUrl}
               target="_blank"
               rel="noreferrer"
-              className={`text-sm ${TEXT} hover:text-white ${FOCUS}`}
+              className={`block py-1 text-sm ${TEXT} hover:text-white ${FOCUS}`}
             >
               Resume
             </a>

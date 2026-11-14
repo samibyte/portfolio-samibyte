@@ -56,7 +56,7 @@ export function CaseStudy({ project }: { project: Project }) {
           <div>
             <Link
               href="/#projects"
-              className={`text-sm ${LIGHT} underline underline-offset-4 ${BAR_FOCUS}`}
+              className={`py-1 text-sm ${LIGHT} underline underline-offset-4 ${BAR_FOCUS}`}
             >
               ← All projects
             </Link>
@@ -76,7 +76,7 @@ export function CaseStudy({ project }: { project: Project }) {
                 href={project.source}
                 target="_blank"
                 rel="noreferrer"
-                className={`${LIGHT} underline underline-offset-4 ${BAR_FOCUS}`}
+                className={`${LIGHT} py-1 underline underline-offset-4 ${BAR_FOCUS}`}
               >
                 Source
               </a>
@@ -86,7 +86,7 @@ export function CaseStudy({ project }: { project: Project }) {
                 href={project.live}
                 target="_blank"
                 rel="noreferrer"
-                className={`${LIGHT} underline underline-offset-4 ${BAR_FOCUS}`}
+                className={`${LIGHT} py-1 underline underline-offset-4 ${BAR_FOCUS}`}
               >
                 Live
               </a>

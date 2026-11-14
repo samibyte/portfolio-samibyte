@@ -55,7 +55,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Nav />
         <DiveLine />
         <EffectsToggle />
-        <main id="main-content" className="z-1 flex flex-1 flex-col">
+        <main id="main-content" tabIndex={-1} className="z-1 flex flex-1 flex-col">
           {children}
         </main>
       </body>

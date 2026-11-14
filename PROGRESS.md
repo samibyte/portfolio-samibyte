@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P6 · **Next:** P6.5
+**Phase:** P6 · **Next:** P6.6
 
 Machine-readable task list. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS` **and** the commit exists.
@@ -75,7 +75,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P6.3 Effects toggle
 - [x] P6.4 No-WebGL fallback
 - [x] P6.4a Fix C4 skill-chip contrast
-- [ ] P6.5 Accessibility pass
+- [x] P6.5 Accessibility pass
 - [ ] P6.6 C5 and C6 tests
 - [ ] P6.7 Lighthouse
 
@@ -138,3 +138,4 @@ None.
 2026-11-14 | P6.3 | GATE: PASS; button "Reduce motion" aria-pressed false→true, localStorage off, tier 0→3, signal.time 1.335→0, canvas pixels identical while frozen, same <main> and <canvas>; reload persists; Enter/Space toggle; media-reduce starts pressed and "on" overrides it; c7 57 passed (1 skipped); extra file app/layout.tsx. C4 blocker unchanged | P6.3 Effects toggle | deepseek-v4.1-flash-free
 2026-11-14 | P6.4 | GATE: PASS; c6 6 passed (both projects) covering ?fx=off, missing WebGL2 and webglcontextlost: no canvas, 5 zones, form and link navigation; c1 4 passed, c2 2 passed; moved P6.3 toggle to bottom-right because bottom-left broke C1 at x=1%; C4 blocker unchanged | P6.4 No-WebGL fallback | deepseek-v4.1-flash-free
 2026-11-14 | P6.4a | GATE: PASS; c4 2 passed (desktop + mobile); removed `transition-colors duration-150` from `[data-skill]` chips; `[data-chrome]` toggle excluded from C4 background screenshots alongside nav; Blockers now None | P6.4a Fix C4 skill-chip contrast | deepseek-v4.1-flash-free
+2026-11-14 | P6.5 | GATE: PASS; c6 18 passed (9 per project): 24×24 targets on / and /projects/stitchlogic, Tab pass with no trap / invisible / obscured focus and a 2 px zone-coloured ring, skip link focuses main, anchor jump clears the nav, form errors linked, skills announced once, canvas aria-hidden, aria-current; c1/c2/c3/c4/c7 69 passed (1 skipped); anchor test verified red without scroll-margin. Unrelated WIP redesign preserved in stash@{0} | P6.5 Accessibility pass | deepseek-v4.1-flash-free

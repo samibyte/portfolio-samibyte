@@ -15,7 +15,7 @@ export function ProjectCard({ project }: { project: Project }) {
       <h3 className="mt-2 font-[family-name:var(--font-display)] text-[length:var(--fs-2xl)] leading-tight text-[var(--text)]">
         <Link
           href={`/projects/${project.slug}`}
-          className="underline-offset-4 hover:underline"
+          className="py-1 underline-offset-4 hover:underline"
         >
           {project.title}
         </Link>
@@ -41,7 +41,7 @@ export function ProjectCard({ project }: { project: Project }) {
       <div className="mt-auto flex flex-wrap gap-4 pt-6 text-[length:var(--fs-sm)]">
         <Link
           href={`/projects/${project.slug}`}
-          className="font-medium text-[var(--text)] underline underline-offset-4"
+          className="py-1 font-medium text-[var(--text)] underline underline-offset-4"
         >
           Read case study
         </Link>
@@ -50,7 +50,7 @@ export function ProjectCard({ project }: { project: Project }) {
             href={project.source}
             target="_blank"
             rel="noreferrer"
-            className="text-[var(--text)] underline underline-offset-4"
+            className="py-1 text-[var(--text)] underline underline-offset-4"
           >
             Source
           </a>
@@ -60,7 +60,7 @@ export function ProjectCard({ project }: { project: Project }) {
             href={project.live}
             target="_blank"
             rel="noreferrer"
-            className="text-[var(--text)] underline underline-offset-4"
+            className="py-1 text-[var(--text)] underline underline-offset-4"
           >
             Live
           </a>
