@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P5 · **Next:** P5.5
+**Phase:** P5 · **Next:** P6.1
 
 Machine-readable task list. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS` **and** the commit exists.
@@ -67,7 +67,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P5.2 ProjectCard motion
 - [x] P5.3 Skills torch
 - [x] P5.4 DiveLine
-- [ ] P5.5 Case-study dive and ascent
+- [x] P5.5 Case-study dive and ascent
 
 ## P6 Performance, fallback, accessibility
 - [ ] P6.1 Quality tiers
@@ -86,7 +86,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [ ] P7.5 Final gate
 
 ## Blockers
-None.
+- Pre-existing C4 regression from P5.3 (not P5.5): `npx playwright test tests/c4.spec.ts` fails in both projects with `Zone "midnight", text "TypeScript" (15px, weight 400): contrast 3.31 < 4.5`. Cause: P5.3 added `transition-colors duration-150` to every `[data-skill]` chip; C4 hides text with `color: transparent !important` and screenshots 50 ms later, so the 150 ms colour transition leaves the glyphs partly visible in the sample. Running the same C4 logic with `prefers-reduced-motion: reduce` (global `transition: none`) reports 0 failures, including Contact. Proposed one-line fix in a separate task: drop `transition-colors duration-150` from the skill chip; the torch writes `--glow` per frame and already provides the transition.
 
 ## Session log
 <!-- one line per session: date | task | gate | commit | model -->
@@ -131,3 +131,4 @@ None.
 2026-11-14 | P5.2 | GATE: PASS; ProjectCard motion via CSS ping ring & Architecture on hover/focus-within | P5.2 ProjectCard motion | flash
 2026-11-14 | P5.3 | GATE: PASS; Skills torch wired inside main loop via onFrame, cached centers, --glow scoped | P5.3 Skills torch | flash
 2026-11-14 | P5.4 | GATE: PASS; zones surface→sunlight→twilight→midnight→abyss (4 changes, 4 live mutations), meters 15→687→4944 m, marker 0→57.6→100% | P5.4 DiveLine | deepseek-v4.1-flash-free
+2026-11-14 | P5.5 | GATE: PASS; case-study luma 0.1887→0.0132→0.0047→0.0156→0.0209; ascent 1999→0 in 100 ms (reduced) / 1810 at 150 ms →0 (normal); lantern 256 px, meanB−meanR 14.08, +0.47 mean red; c2 2 passed. C4 red is the pre-existing P5.3 transition issue in Blockers | P5.5 Case-study dive and ascent | deepseek-v4.1-flash-free

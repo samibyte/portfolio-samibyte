@@ -7,8 +7,21 @@ export function Contact() {
       id="contact"
       data-zone="abyss"
       aria-labelledby="contact-title"
-      className="relative px-6 py-24"
+      className="relative isolate overflow-hidden px-6 py-24"
     >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+      >
+        <div
+          className="absolute bottom-0 right-0 h-64 w-64 translate-x-1/3 translate-y-1/3 rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(255, 159, 67, 0.18) 0%, rgba(255, 159, 67, 0.05) 45%, transparent 72%)",
+          }}
+        />
+      </div>
+
       <div className="mx-auto grid w-full max-w-6xl gap-12 lg:grid-cols-2">
         <div>
           <h2

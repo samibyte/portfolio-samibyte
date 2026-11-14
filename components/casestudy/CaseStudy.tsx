@@ -1,11 +1,19 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { ZoneId, Project } from "@/lib/types";
+import { T } from "@/lib/tuning";
+import { BackToSurface } from "@/components/ui/BackToSurface";
 import { Architecture } from "./Architecture";
 
 const LIGHT = "text-[#e0e8f0]";
 const BAR_FOCUS =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e0e8f0]";
+
+function Gap() {
+  return (
+    <div aria-hidden="true" style={{ height: `calc(var(--vh) * ${T.gapVh})` }} />
+  );
+}
 
 function Section({
   id,
@@ -91,9 +99,13 @@ export function CaseStudy({ project }: { project: Project }) {
         <p>{project.problem}</p>
       </Section>
 
+      <Gap />
+
       <Section id="solution" zone="twilight" title="Solution">
         <p>{project.solution}</p>
       </Section>
+
+      <Gap />
 
       <Section id="challenge" zone="abyss" title="Challenge">
         <p>{project.challenge}</p>
@@ -123,12 +135,17 @@ export function CaseStudy({ project }: { project: Project }) {
         ) : null}
       </Section>
 
+      <Gap />
+
       <Section id="outcome" zone="midnight" title="Outcome">
         <p>{project.outcome}</p>
       </Section>
 
+      <Gap />
+
       <Section id="takeaway" zone="twilight" title="Takeaway">
         <p>{project.takeaway}</p>
+        <BackToSurface />
       </Section>
     </div>
   );
