@@ -86,6 +86,35 @@ void main() {
     water += vec3(0.12, 0.18, 0.22) * (rays * uFx.x);
   }
 
+  // Layer 4: Marine snow — hash-grid particles, 2 parallax layers drifting up, count uFx.z * T.snowMax (20)
+  if (uFx.z > 0.01) {
+    float snowCount = uFx.z * 20.0;
+    float snowFlutter = (noise(uv * 3.0 + vec2(0.0, -t * 0.05)) - 0.5) * 0.008;
+    float snowAcc = 0.0;
+    for (int i = 0; i < 20; i++) {
+      if (float(i) >= snowCount) break;
+      float fi = float(i);
+      float h1 = hash(vec2(fi * 1.73 + 0.1, fi * 3.17 + 0.2));
+      float h2 = hash(vec2(fi * 2.39 + 0.3, fi * 1.91 + 0.4));
+      float h3 = hash(vec2(fi * 3.41 + 0.5, fi * 2.83 + 0.6));
+      float col = mod(fi, 5.0);
+      float row = floor(fi / 5.0);
+      vec2 basePos = vec2((col + 0.15 + 0.7 * h1) / 5.0, (row + 0.15 + 0.7 * h2) / 4.0);
+      float layer = mod(fi, 2.0);
+      float speed = mix(0.045, 0.02, layer);
+      float y = fract(basePos.y + t * speed);
+      float x = fract(basePos.x + sin(t * 0.6 + h3 * 6.28) * 0.015 + snowFlutter);
+      float radius = mix(0.0035, 0.002, layer);
+      vec2 delta = vec2(fract(uv.x - x + 0.5) - 0.5, fract(uv.y - y + 0.5) - 0.5);
+      delta.x *= uAspect;
+      float d = length(delta);
+      float flake = smoothstep(radius, 0.0, d);
+      snowAcc += flake * mix(1.0, 0.6, layer);
+    }
+    // Colour is text-adjacent, never pure white (C4 allowance)
+    water += vec3(0.12, 0.15, 0.18) * (clamp(snowAcc, 0.0, 1.0) * uFx.z);
+  }
+
   // Layer 7: Foam — thin bright line at wl, only when uWaterline is on screen
   if (uWaterline > -0.1 && uWaterline < 1.2) {
     float foamDist = abs(uv.y - wl);

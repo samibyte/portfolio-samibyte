@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P3 · **Next:** P3.3
+**Phase:** P3 · **Next:** P3.4
 
 Machine-readable task list. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS` **and** the commit exists.
@@ -51,7 +51,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 ## P3 Depth
 - [x] P3.1 Contrast script
 - [x] P3.2 Caustics and god rays
-- [ ] P3.3 Marine snow
+- [x] P3.3 Marine snow
 - [ ] P3.4 Abyss glow
 - [ ] P3.5 Plunge bubbles
 - [ ] P3.6 Depth verification
