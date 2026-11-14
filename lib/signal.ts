@@ -7,6 +7,7 @@ export interface SignalState {
   scrollTarget: number;
   scrollSpring: { x: number; v: number };
   pointerSpring: { x: number; v: number };
+  pointer: { x: number; y: number };
   time: number;
   zone: ZoneId;
   reduced: boolean;
@@ -20,6 +21,7 @@ export const signal: SignalState = {
   scrollTarget: 0,
   scrollSpring: { x: 0, v: 0 },
   pointerSpring: { x: 0, v: 0 },
+  pointer: { x: -1, y: -1 },
   time: 0,
   zone: "surface",
   reduced: false,
@@ -80,8 +82,10 @@ function checkCoarse(): boolean {
 }
 
 function onPointerMove(e: PointerEvent): void {
-  rawPointerX = e.clientX;
-  rawPointerY = e.clientY;
+  if (e.isPrimary ?? true) {
+    rawPointerX = e.clientX;
+    rawPointerY = e.clientY;
+  }
 }
 
 function loop(now: number): void {
@@ -125,7 +129,7 @@ function loop(now: number): void {
     if (rawPointerX >= 0 && rawPointerY >= 0 && prevPointerX >= 0 && prevPointerY >= 0) {
       const dist = Math.hypot(rawPointerX - prevPointerX, rawPointerY - prevPointerY);
       const pointerSpeed = dt > 0 ? dist / dt : 0;
-      const pointerTarget = Math.min(1, pointerSpeed / 1000);
+      const pointerTarget = Math.max(0, Math.min(1, pointerSpeed / T.velocityNorm));
       signal.pointerSpring = stepSpring(
         signal.pointerSpring.x,
         signal.pointerSpring.v,
@@ -145,6 +149,8 @@ function loop(now: number): void {
   prevScrollY = scrollY;
   prevPointerX = rawPointerX;
   prevPointerY = rawPointerY;
+  signal.pointer.x = rawPointerX;
+  signal.pointer.y = rawPointerY;
 
   // Active section zone
   const midY = scrollY + vh * 0.3;

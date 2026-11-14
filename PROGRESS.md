@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P4 · **Next:** P4.1
+**Phase:** P5 · **Next:** P5.1
 
 Machine-readable task list. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS` **and** the commit exists.
@@ -60,7 +60,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 ## P4 Physics and interaction
 - [x] P4.1 Spring unit test
 - [x] P4.2 Turbulence
-- [ ] P4.3 Pointer
+- [x] P4.3 Pointer
 
 ## P5 Content blending
 - [ ] P5.1 BuoyChip
@@ -126,3 +126,4 @@ None.
 2026-11-14 | P2.9 | GATE: PASS; npx playwright test tests/c1.spec.ts 4 passed (effects on & ?fx=off) | P2.9 C1 test | flash
 2026-11-14 | P3.6 | GATE: PASS; tests c2 and c4 passed (10 passed) | P3.6 Depth verification | flash
 2026-11-14 | P3.7 | GATE: PASS; Node check bgAt maxDelta 0.0196 < 0.02, 0 text in gaps | P3.7 Zone text polish | flash
+2026-11-14 | P4.3 | GATE: PASS; pointer spring wired to uMouse & uMouseVel, single passive listener, canvasRect cached | P4.3 Pointer | flash

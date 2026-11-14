@@ -127,20 +127,13 @@ export function OceanCanvas() {
 
       let lastWidth = -1;
       let lastHeight = -1;
-      let rawPointerX = -1;
-      let rawPointerY = -1;
+      let canvasRect = { left: 0, top: 0, width: 0, height: 0 };
       let hasRendered = false;
       let lastRenderScrollY = -1;
       let lastRenderVh = -1;
       let lastRenderW = -1;
       let lastRenderH = -1;
       let lastRenderIsHome: boolean | null = null;
-
-      const onPointerMove = (e: PointerEvent) => {
-        rawPointerX = e.clientX;
-        rawPointerY = e.clientY;
-      };
-      window.addEventListener("pointermove", onPointerMove, { passive: true });
 
       const resize = () => {
         if (!renderer) return;
@@ -164,6 +157,14 @@ export function OceanCanvas() {
         renderer.dpr = dpr;
         renderer.setSize(w, h);
         uniforms.uAspect.value = w / Math.max(1, h);
+
+        const rect = canvas.getBoundingClientRect();
+        canvasRect = {
+          left: rect.left,
+          top: rect.top,
+          width: rect.width || w,
+          height: rect.height || h,
+        };
       };
 
       resize();
@@ -203,9 +204,16 @@ export function OceanCanvas() {
         uFxValue[3] = fx[3];
 
         // 4. uMouse - [x / w, 1 - y / h], init (-1, -1). uMouseVel from pointer spring
-        if (rawPointerX >= 0 && rawPointerY >= 0 && w > 0 && h > 0) {
-          uMouseValue[0] = rawPointerX / w;
-          uMouseValue[1] = 1 - rawPointerY / h;
+        const px = signal.pointer.x;
+        const py = signal.pointer.y;
+        if (
+          px >= 0 &&
+          py >= 0 &&
+          canvasRect.width > 0 &&
+          canvasRect.height > 0
+        ) {
+          uMouseValue[0] = (px - canvasRect.left) / canvasRect.width;
+          uMouseValue[1] = 1 - (py - canvasRect.top) / canvasRect.height;
         } else {
           uMouseValue[0] = -1;
           uMouseValue[1] = -1;
@@ -218,11 +226,11 @@ export function OceanCanvas() {
         // 6. uTime - signal.time (0 under reduced motion)
         uniforms.uTime.value = signal.reduced ? 0 : signal.time;
 
-        // 7. uRipple - T.ripple, scaled by pointer spring; 0 in Tier 2 and under reduced motion
+        // 7. uRipple - T.ripple; 0 in Tier 2 and under reduced motion
         if (signal.coarse || signal.reduced) {
           uniforms.uRipple.value = 0;
         } else {
-          uniforms.uRipple.value = T.ripple * Math.max(0, signal.pointerSpring.x);
+          uniforms.uRipple.value = T.ripple;
         }
 
         // 8. uTurb & uWaterline (P4.2: uTurb = |x|, settles in <3s, continuous on reversal)
@@ -265,7 +273,6 @@ export function OceanCanvas() {
       return () => {
         cancelAnimationFrame(raf);
         if (unsubscribe) unsubscribe();
-        window.removeEventListener("pointermove", onPointerMove);
         window.removeEventListener("resize", resize);
         program?.remove?.();
         geometry?.remove();
