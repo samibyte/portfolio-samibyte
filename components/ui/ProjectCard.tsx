@@ -1,9 +1,14 @@
 import Link from "next/link";
 import type { Project } from "@/lib/types";
+import { Architecture } from "@/components/casestudy/Architecture";
 
 export function ProjectCard({ project }: { project: Project }) {
   return (
-    <article className="flex h-full flex-col rounded-2xl border border-[var(--text)]/20 p-6">
+    <article className="group relative flex h-full flex-col rounded-2xl border border-[var(--text)]/20 p-6 transition-colors duration-200 hover:border-[var(--text)]/40 focus-within:border-[var(--text)]/40">
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -inset-0.5 rounded-2xl border border-[var(--text)]/40 opacity-0 group-hover:animate-ping group-focus-within:animate-ping motion-reduce:hidden"
+      />
       <p className="text-[length:var(--fs-xs)] font-medium uppercase tracking-[0.2em] text-[var(--text)]/70">
         {project.tag}
       </p>
@@ -28,6 +33,11 @@ export function ProjectCard({ project }: { project: Project }) {
           </li>
         ))}
       </ul>
+      {project.architecture && project.architecture.length > 0 ? (
+        <div className="hidden group-hover:block group-focus-within:block [&>figure]:mt-3">
+          <Architecture nodes={project.architecture} />
+        </div>
+      ) : null}
       <div className="mt-auto flex flex-wrap gap-4 pt-6 text-[length:var(--fs-sm)]">
         <Link
           href={`/projects/${project.slug}`}

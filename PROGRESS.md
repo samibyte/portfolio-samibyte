@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P5 · **Next:** P5.2
+**Phase:** P5 · **Next:** P5.3
 
 Machine-readable task list. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS` **and** the commit exists.
@@ -64,7 +64,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 
 ## P5 Content blending
 - [x] P5.1 BuoyChip
-- [ ] P5.2 ProjectCard motion
+- [x] P5.2 ProjectCard motion
 - [ ] P5.3 Skills torch
 - [ ] P5.4 DiveLine
 - [ ] P5.5 Case-study dive and ascent
@@ -128,3 +128,4 @@ None.
 2026-11-14 | P3.7 | GATE: PASS; Node check bgAt maxDelta 0.0196 < 0.02, 0 text in gaps | P3.7 Zone text polish | flash
 2026-11-14 | P4.3 | GATE: PASS; pointer spring wired to uMouse & uMouseVel, single passive listener, canvasRect cached | P4.3 Pointer | flash
 2026-11-14 | P5.1 | GATE: PASS; BuoyChip created & mounted in Hero at 30% vh, bob wave tracked, no layout shift | P5.1 BuoyChip | flash
+2026-11-14 | P5.2 | GATE: PASS; ProjectCard motion via CSS ping ring & Architecture on hover/focus-within | P5.2 ProjectCard motion | flash
