@@ -1,4 +1,5 @@
 import { content } from "@/lib/content";
+import { BuoyChip } from "@/components/ui/BuoyChip";
 
 export function Hero() {
   return (
@@ -8,6 +9,7 @@ export function Hero() {
       aria-labelledby="hero-title"
       className="relative h-[calc(var(--vh)*100)] overflow-hidden"
     >
+      <BuoyChip />
       <div className="absolute inset-x-0 top-[30%] -translate-y-1/2 px-6">
         <div className="mx-auto w-full max-w-6xl">
           <p className="text-[length:var(--fs-xs)] uppercase tracking-[0.25em] text-[var(--text)]/70">
