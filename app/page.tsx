@@ -3,6 +3,7 @@ import { Projects } from "@/components/sections/Projects";
 import { About } from "@/components/sections/About";
 import { Skills } from "@/components/sections/Skills";
 import { Contact } from "@/components/sections/Contact";
+import { Closing } from "@/components/sections/Closing";
 import { T } from "@/lib/tuning";
 
 function Gap() {
@@ -23,6 +24,8 @@ export default function Home() {
       <Skills />
       <Gap />
       <Contact />
+      <Gap />
+      <Closing />
     </>
   );
 }
