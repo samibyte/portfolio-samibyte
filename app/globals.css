@@ -19,6 +19,29 @@
   --fs-3xl: clamp(2.25rem, 1.8rem + 2vw, 3.5rem);
   --fs-4xl: clamp(2.75rem, 1.9rem + 4vw, 5rem);
 
+  /* Type contract (P10.1, D-217).
+   * Display: Instrument Serif — clamp sizes live here as reference; components
+   *   may also write clamp() directly for one-off masthead or station titles.
+   * Instrument: JetBrains Mono — depth, index, dates, dock readouts, labels.
+   * Body: Inter — 1.0625 rem base (--fs-base), leading 1.65, measure ≤ 62ch.
+   * Tracking tokens are unitless em values assigned at the use-site.
+   */
+  --fs-display: clamp(3.5rem, 10vw, 12rem);
+  --fs-masthead: clamp(6rem, 16vw, 15rem);
+  --fs-body: var(--fs-base);  /* one step up from prior base */
+  --leading-body: 1.65;
+  --measure-body: 62ch;
+  --tracking-instrument: 0.18em;   /* uppercase mono labels */
+  --tracking-tight: -0.03em;       /* display headings */
+
+  /* Section rhythm by depth (D-212). Applied as padding-block on [data-zone]. */
+  --station-pad: 12vh;             /* surface default */
+
+  /* Instrument mono face. next/font/google (JetBrains Mono) sets --font-mono
+   * when the build has network access; this fallback ensures the token is
+   * always defined (D-217). */
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
+
   /* Pre-hydration fallback. P2.3 overwrites this with innerHeight * 0.01 px. */
   --vh: 1vh;
 }
@@ -33,6 +56,9 @@ body {
   color: var(--text);
   background: linear-gradient(to bottom, var(--bg-top), var(--bg-bot)) no-repeat;
   font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+  font-size: var(--fs-body);
+  line-height: var(--leading-body);
+  font-optical-sizing: auto;
 }
 
 h1,
@@ -42,6 +68,9 @@ h4,
 h5,
 h6 {
   font-family: var(--font-display, Georgia, serif);
+  font-optical-sizing: auto;
+  letter-spacing: var(--tracking-tight);
+  text-wrap: balance;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -109,6 +138,7 @@ main:has(header) section > div {
   --accent: #f59e0b;
   --bg-top: #80b8e0;
   --bg-bot: #35afa7;
+  --station-pad: 12vh;
 }
 
 [data-zone="sunlight"] {
@@ -116,6 +146,7 @@ main:has(header) section > div {
   --accent: #2dd4bf;
   --bg-top: #35afa7;
   --bg-bot: #2e9e98;
+  --station-pad: 16vh;
 }
 
 [data-zone="twilight"] {
@@ -123,6 +154,7 @@ main:has(header) section > div {
   --accent: #2a6496;
   --bg-top: #143854;
   --bg-bot: #0d2238;
+  --station-pad: 20vh;
 }
 
 [data-zone="midnight"] {
@@ -130,6 +162,7 @@ main:has(header) section > div {
   --accent: #1a3a6e;
   --bg-top: #0a1628;
   --bg-bot: #060d19;
+  --station-pad: 24vh;
 }
 
 [data-zone="abyss"] {
@@ -137,6 +170,7 @@ main:has(header) section > div {
   --accent: #ff9f43;
   --bg-top: #050d1a;
   --bg-bot: #020408;
+  --station-pad: 28vh;
 }
 
 /*
@@ -228,9 +262,13 @@ body:not(:has(canvas:not(.fluid-glass__canvas))) [data-zone="surface"] {
 }
 
 /* ── Glass UI (P9) ─────────────────────────────────────────────────────────
- * CSS-first glass for chrome, controls and content. No canvas, no WebGL and
- * no animation loop: interaction is a compositor transition, and reduced
+ * CSS-first glass for chrome, controls and instruments. No canvas, no WebGL
+ * and no animation loop: interaction is a compositor transition, and reduced
  * motion turns it off. `lib/glass.ts` is the only way to apply these classes.
+ *
+ * Scope (D-208 / D-217): glass() is for the dock, toggle, station plates,
+ * chips, form fields and controls. Prose, project content, journey, skills and
+ * display type sit directly on the water — no card fill, border or shadow.
  *
  * The fill is mixed from the zone's own `--bg-top`, so it always moves away
  * from `--text` and cannot lower contrast. `chrome` keeps the fixed dark panel
@@ -331,6 +369,20 @@ body:not(:has(canvas:not(.fluid-glass__canvas))) [data-zone="surface"] {
     transform: none;
     transition: none;
   }
+}
+
+/* ── Instrument face (P10.1, D-217) ────────────────────────────────────────
+ * Applies the mono instrument role: JetBrains Mono, uppercase, tight leading,
+ * tabular numerals, and the standard instrument tracking token.
+ * Use for depth readouts, station indices, dates, dock labels, form labels.
+ * Do NOT use for body copy or display headings.
+ */
+.instrument {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  letter-spacing: var(--tracking-instrument);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
 }
 
 /* ── Floating dock: vertical left rail ─────────────────────────────────────
@@ -442,7 +494,7 @@ body:not(:has(canvas:not(.fluid-glass__canvas))) [data-zone="surface"] {
   border-radius: 0.375rem;
   background: rgb(5 13 26 / 0.95);
   color: #e0e8f0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   line-height: 1.2;

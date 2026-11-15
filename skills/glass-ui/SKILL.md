@@ -8,6 +8,12 @@ description: Use when adding or changing any chrome element, control or content 
 The house style is **one CSS-first glass system**. It exists so the whole site
 shares a material without adding a second animation runtime.
 
+**Scope (D-208, D-217):** `glass()` applies to chrome, controls, fields, chips
+and instrument plates — the dock, toggle, station plates, form fields, skill
+chips and any floating instrument. Prose, project content, journey, skills text
+and display headings sit **directly on the water** with no card fill, border or
+shadow. Never wrap body copy or section content in a glass surface.
+
 - Helper: `glass()` in `lib/glass.ts`.
 - Rules: the "Glass UI (P9)" block in `app/globals.css`.
 - Continuous liquid motion: `components/ui/FluidGlass.tsx` only, driven by
@@ -84,6 +90,8 @@ transition. `className` is appended last for layout and type only.
 - Do not hand-roll `rounded-* border ... bg-*` for a panel, card, control,
   chip or field. If a shape is missing, add a variant to `lib/glass.ts` and
   its rule to `globals.css`.
+- Do not apply `glass()` to prose, project content, journey entries, skills text
+  or display headings. These elements sit directly on the water.
 - Do not put `position`, `display`, `padding` or `color` in `.glass`. Tailwind
   utilities own layout; unlayered `.glass` rules would override them.
 - Do not use `transform` on `<main>`. Surface transforms are fine.
