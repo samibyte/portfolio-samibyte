@@ -18,6 +18,7 @@ export const T = {
   gapVh: 25, // empty band between sections
   bobPx: 8,
   ripple: 0.02,
+  envPhaseSpeed: 0.05, // P10.2: flow phase cycles once per 20 s; frozen when the tier is static
 
   // P8.2 sky + surface + waterline
   waveAmp: 0.05, // ×0.25 in GLSL → ±0.024 clamp (C1)

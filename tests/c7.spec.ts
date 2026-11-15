@@ -5,9 +5,12 @@ import {
   evaluateFps,
   computeMeanFrameTime,
   resetAdaptiveQuality,
+  round2,
   type QualityTier,
   type TierInputs,
 } from "../lib/signal";
+import { environmentAt } from "../lib/layout";
+import { setSectionOffsets } from "../lib/zones";
 import { T } from "../lib/tuning";
 
 test.use({
@@ -225,6 +228,151 @@ test.describe("C7: adaptive quality evaluation (P6.2)", () => {
     const low = evaluateFps(22, mid);
     expect(low.adaptiveLow).toBe(true);
     expect(low.dprCap).toBe(T.dprLow);
+  });
+});
+
+test.describe("C7: environment bridge (P10.2)", () => {
+  test("environmentAt interpolates depth and local light from cached sections", () => {
+    setSectionOffsets([
+      { id: "hero", zone: "surface", pageTop: 0, pageBottom: 1000 },
+      { id: "contact", zone: "abyss", pageTop: 1000, pageBottom: 2000 },
+    ]);
+
+    const surface = environmentAt(0);
+    const halfway = environmentAt(500);
+    const abyss = environmentAt(2500);
+
+    expect(surface.depth).toBe(0);
+    expect(halfway.depth).toBeCloseTo(15, 5);
+    expect(abyss.depth).toBe(6000);
+
+    // Local light is the luma of the background: bright surface, near-black abyss.
+    expect(surface.light).toBeGreaterThan(0.6);
+    expect(abyss.light).toBeLessThan(0.05);
+    expect(surface.light).toBeGreaterThan(abyss.light);
+  });
+
+  test("round2 keeps two decimals and is stable", () => {
+    expect(round2(0.123456)).toBe(0.12);
+    expect(round2(-0.6789)).toBe(-0.68);
+    expect(round2(1)).toBe(1);
+    expect(round2(round2(0.4242))).toBe(0.42);
+  });
+
+  test("EnvVars writes rounded vars on its own element, never :root/body", async ({
+    page,
+  }) => {
+    await page.goto("/?fx=off");
+    const bridge = page.locator("[data-env]");
+    await expect(bridge).toHaveCount(1);
+
+    const read = () =>
+      bridge.evaluate((el) => {
+        const style = getComputedStyle(el);
+        return {
+          depth: style.getPropertyValue("--env-depth").trim(),
+          light: style.getPropertyValue("--env-light").trim(),
+          current: style.getPropertyValue("--env-current").trim(),
+          phase: style.getPropertyValue("--env-phase").trim(),
+        };
+      });
+
+    await expect.poll(async () => (await read()).depth).not.toBe("");
+    const first = await read();
+    for (const value of Object.values(first)) {
+      expect(value).toMatch(/^-?\d+(\.\d{1,2})?$/);
+    }
+
+    const root = await page.evaluate(() => ({
+      rootDepth: getComputedStyle(document.documentElement)
+        .getPropertyValue("--env-depth")
+        .trim(),
+      bodyDepth: getComputedStyle(document.body)
+        .getPropertyValue("--env-depth")
+        .trim(),
+      rootStyle: document.documentElement.getAttribute("style") ?? "",
+      bodyStyle: document.body.getAttribute("style") ?? "",
+    }));
+    expect(root.rootDepth).toBe("");
+    expect(root.bodyDepth).toBe("");
+    expect(root.rootStyle).not.toContain("--env");
+    expect(root.bodyStyle).not.toContain("--env");
+
+    // Depth grows and light falls as the page descends.
+    await page.evaluate(() =>
+      window.scrollTo(0, document.documentElement.scrollHeight),
+    );
+    await expect
+      .poll(async () => Number((await read()).depth), { timeout: 10_000 })
+      .toBeGreaterThan(Number(first.depth) + 100);
+    const bottom = await read();
+    expect(Number(bottom.light)).toBeLessThan(Number(first.light));
+  });
+
+  test("reduced motion freezes motion vars and writes nothing at rest", async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    const bridge = page.locator("[data-env]");
+    await expect(bridge).toHaveCount(1);
+
+    const read = () =>
+      bridge.evaluate((el) => {
+        const style = getComputedStyle(el);
+        return {
+          depth: style.getPropertyValue("--env-depth").trim(),
+          current: style.getPropertyValue("--env-current").trim(),
+          phase: style.getPropertyValue("--env-phase").trim(),
+        };
+      });
+    await expect.poll(async () => (await read()).depth).not.toBe("");
+
+    const writes = await page.evaluate(async () => {
+      const el = document.querySelector("[data-env]")!;
+      let onElement = 0;
+      let onChrome = 0;
+      const elementObserver = new MutationObserver((records) => {
+        onElement += records.length;
+      });
+      const chromeObserver = new MutationObserver((records) => {
+        onChrome += records.length;
+      });
+      elementObserver.observe(el, {
+        attributes: true,
+        attributeFilter: ["style"],
+      });
+      chromeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["style"],
+      });
+      chromeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ["style"],
+      });
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      elementObserver.disconnect();
+      chromeObserver.disconnect();
+      return { onElement, onChrome };
+    });
+
+    // ~36 frames in 600 ms: writing every frame would show up here.
+    expect(writes.onElement).toBe(0);
+    expect(writes.onChrome).toBe(0);
+
+    const before = await read();
+    expect(before.current).toBe("0");
+    expect(before.phase).toBe("0");
+
+    await page.evaluate(() =>
+      window.scrollTo(0, document.documentElement.scrollHeight),
+    );
+    await expect
+      .poll(async () => Number((await read()).depth), { timeout: 10_000 })
+      .toBeGreaterThan(Number(before.depth) + 100);
+    const after = await read();
+    expect(after.current).toBe("0");
+    expect(after.phase).toBe("0");
   });
 });
 

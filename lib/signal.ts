@@ -1,6 +1,21 @@
 import { T } from "./tuning";
-import { sectionAt } from "./layout";
+import { environmentAt, sectionAt } from "./layout";
 import type { ZoneId } from "./types";
+
+/**
+ * Rounded environment values exposed by the loop (P10.2). Consumers copy them
+ * into CSS vars on their own element; nothing here touches React state.
+ */
+export interface SignalEnv {
+  /** Metres below the surface, integer. */
+  depth: number;
+  /** Local background luma, 2 dp, 0…1. */
+  light: number;
+  /** Scroll current, 2 dp, -1…1. Frozen at 0 when the tier is static. */
+  current: number;
+  /** Flow phase, 2 dp, 0…1. Frozen at 0 when the tier is static. */
+  phase: number;
+}
 
 export interface SignalState {
   scrollY: number;
@@ -10,6 +25,7 @@ export interface SignalState {
   pointer: { x: number; y: number };
   time: number;
   zone: ZoneId;
+  env: SignalEnv;
   reduced: boolean;
   coarse: boolean;
   webglOk: boolean;
@@ -183,6 +199,7 @@ export const signal: SignalState = {
   pointer: { x: -1, y: -1 },
   time: 0,
   zone: "surface",
+  env: { depth: 0, light: 1, current: 0, phase: 0 },
   reduced: false,
   coarse: false,
   webglOk: true,
@@ -230,6 +247,11 @@ let rawPointerX = -1;
 let rawPointerY = -1;
 let prevPointerX = -1;
 let prevPointerY = -1;
+
+/** Rounded to two decimals, for values copied into CSS (P10.2). */
+export function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
 
 export function stepSpring(
   x: number,
@@ -460,6 +482,17 @@ function loop(now: number): void {
   if (currentSection) {
     signal.zone = currentSection.zone;
   }
+
+  // Environment bridge (P10.2): positional values follow the scroll, motion
+  // values freeze with the tier. Consumers read `signal.env` in onFrame and
+  // write CSS vars only when a rounded value differs.
+  const environment = environmentAt(midY);
+  signal.env.depth = Math.round(environment.depth);
+  signal.env.light = round2(environment.light);
+  signal.env.current = isStatic ? 0 : round2(signal.scrollSpring.x);
+  signal.env.phase = isStatic
+    ? 0
+    : round2((signal.time * T.envPhaseSpeed) % 1);
 
   for (const listener of frameListeners) {
     listener(dt);

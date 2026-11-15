@@ -1,4 +1,4 @@
-import { setSectionOffsets, type SectionOffset } from "./zones";
+import { bgAt, metersAt, setSectionOffsets, type SectionOffset } from "./zones";
 import type { ZoneId } from "./types";
 
 let cachedSections: SectionOffset[] = [];
@@ -71,6 +71,29 @@ export function sectionAt(pageY: number): SectionOffset | undefined {
   return cachedSections.find(
     (section) => pageY >= section.pageTop && pageY <= section.pageBottom,
   );
+}
+
+export interface EnvironmentSample {
+  /** Metres below the surface at this page position (unrounded). */
+  depth: number;
+  /** Luma of the local background, 0 (abyss) … 1 (bright surface). */
+  light: number;
+}
+
+function luma(rgb: readonly [number, number, number]): number {
+  return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+}
+
+/**
+ * Positional environment at a page coordinate (P10.2). Pure: reads the cached
+ * section offsets only. Motion-derived values (current, flow phase) live in
+ * `lib/signal.ts`; this function needs no frame state.
+ */
+export function environmentAt(pageY: number): EnvironmentSample {
+  return {
+    depth: metersAt(pageY),
+    light: luma(bgAt(pageY)),
+  };
 }
 
 export function documentHeight(): number {

@@ -68,3 +68,4 @@ One line per session: `date | task | gate | checks | commit | model`. Append onl
 2026-11-16 | P10.0 | GATE: PASS | c6: 26/26 passed, 0 skipped; c1: 4/4 passed; c2: 2/2 passed; c4: 2/2 passed; c5: 8/8 passed; c7: 57/58 passed (1 skipped expected) | P10.0 Left dock replaces the top navbar | Gemini 3.8 Flash
 2026-11-16 | P10.0 | GATE: PASS | c1 4/4, c4 2/2, c5 8/8, c6 26/26, 0 skipped; run against a clean `next start` on :3001 because the reused :3000 dev server was stale after `next build` (form hydration + canvas failures) | P10.0 Finish compact dock rail | DeepSeek V4.1 Flash Free
 2026-11-16 | P10.1 Type contract + glass scope | PASS | c4: 2/2, c6: 26/26, skips: 0 | P10.1 type contract glass scope | Claude Sonnet 4.6 (Thinking)
+2026-11-16 | P10.2 Environment bridge | PASS | c7: 65/65 passed, 1 skipped (mobile 4x CPU throttle, expected); c1: 4/4; c4+c5+c6: 36/36; one-loop c5-grep unchanged | P10.2 Environment bridge | DeepSeek V4.1 Flash Free
