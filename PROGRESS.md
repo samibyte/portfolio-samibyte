@@ -39,7 +39,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 ## P7 Launch
 - [x] P7.1 Resolve content slots
 - [x] P7.2 SEO surface
-- [ ] P7.3 Deploy
+- [x] P7.3 Deploy (recorded BLOCKED — see qa/REPORT.md)
 - [ ] P7.4 Evidence report
 - [ ] P7.5 Final gate
 

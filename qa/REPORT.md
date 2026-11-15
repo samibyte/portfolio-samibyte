@@ -108,3 +108,32 @@ Raw reports: `qa/lh/` directory (committed in P6.7).
 ## Open items
 
 - SPEC §5 palette table is stale — canonical values are in `lib/zones.ts`; owner update pending (D-203)
+
+---
+
+## Deploy — P7.3
+
+Checked **2026-11-15** by fetching the live HTML (not a screenshot).
+
+| Field | Value |
+|---|---|
+| URL opened | `https://samibyte.vercel.app/` |
+| HTTP | `200` (`text/html`) |
+| Build served | **stale**: pre-dates P7.2 (navbar is `Nav`, not the P10 `Dock`) |
+| `/sitemap.xml` | `404` |
+| `/robots.txt` | `404` |
+| `/icon.svg` | `404` |
+| `application/ld+json` blocks | `0` |
+| `og:image` | `http://localhost:3000/opengraph-image?8f808df7624b7cb9` → `NEXT_PUBLIC_SITE_URL` was **not set** at build time |
+| Local vs `origin/main` | `main` is 2 commits ahead (`837a78a` cached at origin); nothing pushed by this session |
+| Vercel credentials | none — `npx vercel whoami` → `> Logged out.` |
+| Status | **BLOCKED (needs owner account)** |
+
+A URL answers 200, but it is not this build: the SEO surface from P7.2, the P10 chrome and the current content are absent, and the Open Graph image still resolves to localhost. Recording it as deployed would be a false claim.
+
+Owner checklist to close P7.3:
+
+1. Link `samibyte/portfolio-samibyte` to a Vercel project (framework Next.js, **Node 22.x**).
+2. Set env (SPEC §7 / `.env.example`): `NEXT_PUBLIC_SITE_URL=https://samibyte.vercel.app`, `RESEND_API_KEY`, `CONTACT_TO`, `CONTACT_FROM`.
+3. Push `main` (or deploy locally with `npx vercel --prod`) and let the build finish.
+4. Re-open the URL and confirm: `/sitemap.xml` 200, `/robots.txt` 200, `/icon.svg` 200, one `Person` JSON-LD block, and `og:image` absolute on the production origin.
