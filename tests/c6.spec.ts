@@ -136,6 +136,15 @@ async function collectTabStops(
   for (let press = 0; press < 150; press++) {
     await page.keyboard.press("Tab");
 
+    // The browser schedules the focus scroll; measure after it has settled so
+    // a below-the-fold stop is not mistaken for an unreachable one.
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        }),
+    );
+
     const stop = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement | null;
       if (!el || el === document.body) return null;

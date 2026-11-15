@@ -1,5 +1,7 @@
 "use client";
 
+import { glass } from "@/lib/glass";
+
 export function BackToSurface() {
   const onClick = () => {
     const reduced =
@@ -13,7 +15,13 @@ export function BackToSurface() {
     <button
       type="button"
       onClick={onClick}
-      className="mt-10 inline-flex items-center gap-2 rounded-full border border-[var(--text)]/30 px-5 py-2 text-[length:var(--fs-sm)] text-[var(--text)] transition-colors hover:bg-[var(--text)]/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--text)]"
+      className={glass({
+        variant: "control",
+        tone: "regular",
+        interactive: true,
+        className:
+          "mt-10 inline-flex items-center gap-2 px-5 py-2 text-[length:var(--fs-sm)] text-[var(--text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--text)]",
+      })}
     >
       <span aria-hidden="true">↑</span>
       Back to surface

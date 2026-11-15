@@ -56,6 +56,8 @@ Install split — runtime `dependencies` are exactly `next`, `react`, `react-dom
 - `lenis`, `locomotive-scroll`, `embla`, any scroll hijack → violates C5.
 - `gsap`, `framer-motion`, `motion`, `three` → the single loop in §4 animates everything. One animation system.
 - `sharp`, `canvas`, `puppeteer` → not needed.
+- `@liquefy-ui/*`, `liquid-glass-js`, `@react-three/fiber`, any UI library that owns a `requestAnimationFrame` loop or a WebGL context → the in-house CSS glass system (`lib/glass.ts`, §3.13) is the replacement. See D-202.
+- `liquid-glass-react`, `glasscn-ui` → CSS/SVG glass, but still a new dependency; use `lib/glass.ts` instead.
 - Any new dependency. If one is truly required: stop, write it in `PROGRESS.md` Blockers, and ask.
 
 **Fallback pins** (only if a pinned version breaks the build, log a `DECISIONS.md` row):
@@ -78,6 +80,7 @@ Install split — runtime `dependencies` are exactly `next`, `react`, `react-dom
 10. **`--vh`** is declared `1vh` in CSS as a pre-hydration fallback, then overwritten by JS with `innerHeight * 0.01` **px** (1% of viewport height, so `calc(var(--vh) * 100)` is the full height) on load and on width/orientation change only. CSS and GL both use it. Never trust bare `100vh` on mobile.
 11. **SSR safety:** no `window`/`document` at module top level. No `getComputedStyle` during render.
 12. **`?fx=off`** disables the canvas for Lighthouse, C6 and fallback tests. In development only, `window.__ocean` exposes the signal for tests.
+13. **Glass UI is CSS-first.** Every chrome element, control and content surface uses `glass()` from `lib/glass.ts` and the `.glass` rules in `app/globals.css`. No canvas, no WebGL context and no animation loop per surface. The only glass renderer is the bounded `FluidGlass` mark, driven by `onFrame` from `lib/signal.ts`. A UI dependency that owns a render loop or a WebGL context is excluded (§2). See `skills/glass-ui/SKILL.md`.
 
 ---
 
@@ -85,7 +88,7 @@ Install split — runtime `dependencies` are exactly `next`, `react`, `react-dom
 
 ```text
 AGENTS.md  SPEC.md  PROGRESS.md  DECISIONS.md  CONTENT.md  SETUP_GUIDE.md
-phases/P0..P7.md   skills/*/SKILL.md   scripts/*   tests/*
+phases/P0..P9.md   skills/*/SKILL.md   scripts/*   tests/*
 app/       layout.tsx page.tsx globals.css icon.svg
            projects/[slug]/page.tsx  api/contact/route.ts
            opengraph-image.tsx  sitemap.ts robots.ts
@@ -94,7 +97,7 @@ components/sections/ Hero Projects About Skills Contact
 components/ui/       Nav DiveLine EffectsToggle BuoyChip ProjectCard BackToSurface
 components/casestudy/ CaseStudy Architecture
 components/form/     ContactForm
-lib/       types tuning zones layout signal content projects contact-schema
+lib/       types tuning zones layout signal content projects contact-schema glass
 public/    (delete the template SVGs; no binary assets)
 tests/     helpers/pixels.ts c1 c2 c3 c4 c5 c6 c7 shots
 ```

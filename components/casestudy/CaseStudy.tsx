@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { ZoneId, Project } from "@/lib/types";
 import { T } from "@/lib/tuning";
+import { glass } from "@/lib/glass";
 import { BackToSurface } from "@/components/ui/BackToSurface";
 import { Architecture } from "./Architecture";
 
@@ -51,7 +52,13 @@ function Section({
 export function CaseStudy({ project }: { project: Project }) {
   return (
     <div className="pt-16">
-      <header className="sticky top-16 z-10 border-b border-[#e0e8f0]/20 bg-[var(--panel)]">
+      <header
+        className={glass({
+          variant: "bar",
+          tone: "chrome",
+          className: "sticky top-16 z-10",
+        })}
+      >
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-end justify-between gap-4 px-6 py-4">
           <div>
             <Link
@@ -60,9 +67,6 @@ export function CaseStudy({ project }: { project: Project }) {
             >
               ← All projects
             </Link>
-            <p className="mt-3 text-[length:var(--fs-xs)] uppercase tracking-[0.2em] text-[#e0e8f0]/70">
-              {project.tag}
-            </p>
             <h1
               className={`mt-1 font-[family-name:var(--font-display)] text-[length:var(--fs-2xl)] leading-tight ${LIGHT}`}
             >
@@ -113,7 +117,13 @@ export function CaseStudy({ project }: { project: Project }) {
         <Architecture nodes={project.architecture} />
 
         {project.decision ? (
-          <div className="mt-10 rounded-2xl border border-[var(--text)]/25 p-6">
+          <div
+            className={glass({
+              variant: "card",
+              tone: "regular",
+              className: "mt-10 p-6",
+            })}
+          >
             <h3 className="font-[family-name:var(--font-display)] text-[length:var(--fs-xl)] text-[var(--text)]">
               {project.decision.title}
             </h3>

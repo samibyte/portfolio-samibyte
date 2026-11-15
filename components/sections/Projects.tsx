@@ -18,7 +18,7 @@ export function Projects() {
         </h2>
         <ul className="mt-10 grid gap-6 md:grid-cols-2">
           {PROJECTS.map((project) => (
-            <li key={project.slug}>
+            <li key={project.slug} className="min-w-0">
               <ProjectCard project={project} />
             </li>
           ))}

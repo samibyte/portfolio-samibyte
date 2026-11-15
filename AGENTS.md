@@ -10,6 +10,7 @@ Entry point for every coding agent. You are one of several agents working on thi
 4. Read `skills/<name>/SKILL.md` when the task names it, or when you touch its trigger:
    - `components/ocean/**` or the loop in `lib/signal.ts` → `skills/ocean-shader/SKILL.md`
    - any colour, text, focus or motion change → `skills/ocean-a11y-contrast/SKILL.md`
+   - `lib/glass.ts`, the "Glass UI" block in `app/globals.css`, or any `components/ui|sections|form|casestudy` surface → `skills/glass-ui/SKILL.md`
    - `qa/REPORT.md`, or a phase exit → `skills/ocean-qa-gate/SKILL.md`
 5. `SPEC.md`: only the sections the phase or task names. `DECISIONS.md`: only via `grep -n "<topic>" DECISIONS.md`. Never read either whole.
 
@@ -42,12 +43,24 @@ Next:   <output of scripts/next-task.sh, or "n/a">
 - `SPEC.md` §1 (C1–C8) is locked. Never edit it. If a task appears to require breaking a constraint, stop — that is a spec bug, not a permission slip.
 - Never invent a fact, number, date, employer, metric, technology or URL. Copy from `CONTENT.md`. Unconfirmed → `[USER: …]` in `CONTENT.md` and the field is omitted from the data file.
 - Native scroll only. No scroll library, no `preventDefault` on wheel/touch, no `transform` on `<main>` (C5).
-- One `requestAnimationFrame` loop, in `lib/signal.ts`. No second loop anywhere.
+- One `requestAnimationFrame` loop, in `lib/signal.ts`. No second loop anywhere. Glass UI motion is CSS only; it never starts a loop.
 - No `setState` per frame. No `getComputedStyle` during render.
 - Tunable numbers live in `lib/tuning.ts` and `lib/zones.ts`. GLSL literals are `0`/`1` or named geometric constants listed in the phase's tap-budget comment.
-- No new dependency. If one is genuinely required: write it under **Blockers** in `PROGRESS.md` and stop.
+- No new dependency. If one is genuinely required: write it under **Blockers** in `PROGRESS.md` and stop. A UI library that owns a `requestAnimationFrame` loop or a WebGL context (`@liquefy-ui/*`, `liquid-glass-js`, `three`, `@react-three/fiber`, `framer-motion`, `motion`) is not "genuinely required": use `lib/glass.ts` (D-202).
 - Never weaken a check to make it pass. Never change a threshold, skip a test, or delete an assertion.
 - Never edit `SPEC.md`, `AGENTS.md`, or a `phases/*` file. Propose the change in your report instead.
+
+## UI: one glass system
+
+Every chrome element, control and content surface uses `lib/glass.ts` + the `.glass` rules in `app/globals.css`. Read `skills/glass-ui/SKILL.md` before changing a surface. The owner made this the house style on 2026-11-15 (D-202).
+
+- `glass({ variant, tone, interactive, className })` is the only way to style a surface. Do not hand-roll `rounded-* border ... bg-*` for a panel, bar, card, control, chip or field.
+- Glass is **CSS-first**: `color-mix`, gradients, inset highlights, state transitions. No canvas, no WebGL context, no JS animation loop, no dependency.
+- The only glass renderer is the bounded `FluidGlass` mark, which subscribes to `onFrame` in `lib/signal.ts`. Keep it that way.
+- `variant` is the shape: `panel`, `bar`, `card`, `control`, `chip`, `field`. `tone` is the fill: `clear`/`regular`/`strong` (zone-aware), `solid` (`--text` fill), `chrome` (fixed dark `--panel`).
+- Text stays `var(--text)`. Zone-aware tones mix from the zone's own `--bg-top`, so the fill moves away from the text and cannot lower contrast. Never put body copy on a blurred backdrop.
+- `prefers-reduced-motion` makes every glass transition static. Do not add a continuous CSS animation to a surface; continuous liquid motion belongs to `FluidGlass`.
+- The evidence is `tests/c4.spec.ts` (text contrast), `tests/c5.spec.ts` (no extra ocean canvas, no scroll hijack) and `tests/c6.spec.ts` (targets/focus). Do not add a test that only asserts a class name.
 
 ## Evidence rules
 

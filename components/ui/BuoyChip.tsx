@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { glass } from "@/lib/glass";
 import { onFrame, signal } from "@/lib/signal";
 import { T } from "@/lib/tuning";
 import { content } from "@/lib/content";
@@ -63,7 +64,12 @@ export function BuoyChip() {
       ref={chipRef}
       data-buoy-chip
       style={{ transform: "translateY(var(--bob, 0px))" }}
-      className="absolute top-[calc(var(--vh)*30)] right-6 md:right-12 lg:right-24 -mt-4 z-10 hidden md:inline-flex items-center gap-2 rounded-full border border-[var(--text)]/20 bg-[var(--bg-top)]/80 px-3.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-[var(--text)] shadow-xs backdrop-blur-xs motion-reduce:hidden"
+      className={glass({
+        variant: "chip",
+        tone: "regular",
+        className:
+          "absolute top-[calc(var(--vh)*30)] right-6 md:right-12 lg:right-24 -mt-4 z-10 hidden md:inline-flex items-center gap-2 px-3.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-[var(--text)] motion-reduce:hidden",
+      })}
     >
       <span className="relative flex h-2 w-2">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />

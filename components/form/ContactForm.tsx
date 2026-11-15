@@ -3,12 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import { contactSchema } from "@/lib/contact-schema";
 import { content } from "@/lib/content";
+import { glass } from "@/lib/glass";
 
 type Field = "name" | "email" | "message";
 type Status = "idle" | "sending" | "success" | "error";
 
-const INPUT =
-  "mt-2 w-full rounded-lg border border-[var(--text)]/40 bg-[var(--panel)] px-3 py-2.5 text-[length:var(--fs-base)] text-[var(--text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--text)]";
+const INPUT = glass({
+  variant: "field",
+  tone: "regular",
+  className:
+    "mt-2 w-full px-3 py-2.5 text-[length:var(--fs-base)] text-[var(--text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--text)]",
+});
 
 export function ContactForm() {
   const [values, setValues] = useState({
@@ -187,7 +192,13 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={status === "sending"}
-        className="rounded-full bg-[var(--text)] px-5 py-3 text-sm font-medium text-[var(--bg-bot)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--text)] disabled:opacity-60"
+        className={glass({
+          variant: "control",
+          tone: "solid",
+          interactive: true,
+          className:
+            "px-5 py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--text)] disabled:opacity-60",
+        })}
       >
         {status === "sending" ? "Sending…" : content.contact.form.submit}
       </button>

@@ -4,18 +4,13 @@ export const PROJECTS: Project[] = [
   {
     slug: "keyspace",
     title: "KeySpace",
-    tag: "APP",
     tagline: "Find & List Rental Properties with Ease",
     stack: [
       "Next.js",
       "TypeScript",
       "Node.js",
-      "Express.js",
       "PostgreSQL",
-      "Prisma",
-      "JWT",
       "TanStack Query",
-      "Shadcn UI",
       "Stripe",
     ],
     problem:
@@ -41,7 +36,6 @@ export const PROJECTS: Project[] = [
   {
     slug: "stitchlogic",
     title: "StitchLogic",
-    tag: "SYS",
     tagline:
       "A garment manufacturing and production management platform for tracking orders, production stages, and operational workflows.",
     stack: ["React", "Node.js", "Express", "MongoDB"],
@@ -61,7 +55,6 @@ export const PROJECTS: Project[] = [
   {
     slug: "syncora",
     title: "Syncora",
-    tag: "WEB",
     tagline:
       "A collaborative team management and productivity platform with real-time communication and task coordination.",
     stack: ["Next.js", "PostgreSQL", "Prisma", "Socket.io"],
@@ -81,7 +74,6 @@ export const PROJECTS: Project[] = [
   {
     slug: "eduanalytics",
     title: "EduAnalytics",
-    tag: "API",
     tagline:
       "An educational analytics platform that provides insights into student performance and institutional outcomes.",
     stack: ["MongoDB", "Next.js", "TypeScript", "Tailwind CSS"],
@@ -101,7 +93,6 @@ export const PROJECTS: Project[] = [
   {
     slug: "smart-inventory-system",
     title: "Smart Inventory System",
-    tag: "APP",
     tagline:
       "An inventory and stock management solution for businesses to monitor products, suppliers, and stock movement.",
     stack: ["Next.js", "PostgreSQL", "Prisma"],

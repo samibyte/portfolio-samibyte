@@ -18,7 +18,6 @@ export interface Zone {
 export interface Project {
   slug: string;
   title: string;
-  tag: string; // 'SYS' | 'WEB' | 'API' | 'APP'
   tagline: string;
   stack: string[];
   source?: string;

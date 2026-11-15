@@ -1,4 +1,5 @@
 import { content } from "@/lib/content";
+import { glass } from "@/lib/glass";
 import { BuoyChip } from "@/components/ui/BuoyChip";
 
 export function Hero() {
@@ -32,7 +33,13 @@ export function Hero() {
                   key={cta.label}
                   href={cta.href}
                   {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
-                  className="rounded-full bg-[var(--text)] px-5 py-3 text-sm font-medium text-[var(--bg-top)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--text)]"
+                  className={glass({
+                    variant: "control",
+                    tone: "solid",
+                    interactive: true,
+                    className:
+                      "px-5 py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--text)]",
+                  })}
                 >
                   {cta.label}
                 </a>

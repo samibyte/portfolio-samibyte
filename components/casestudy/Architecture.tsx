@@ -8,7 +8,12 @@ export function Architecture({ nodes }: { nodes?: string[] }) {
   const width = nodes.length * NODE_W + (nodes.length - 1) * GAP;
 
   return (
-    <figure className="mt-8 overflow-x-auto pb-2">
+    <figure
+      className="mt-8 overflow-x-auto pb-2"
+      tabIndex={0}
+      role="group"
+      aria-label="Architecture diagram"
+    >
       <svg
         role="img"
         aria-label={`Architecture: ${nodes.join(" to ")}`}

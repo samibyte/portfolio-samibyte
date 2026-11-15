@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { content } from "@/lib/content";
+import { glass } from "@/lib/glass";
 
 const LINKS = [
   { label: "Projects", href: "/#projects" },
@@ -24,7 +25,12 @@ export function Nav() {
   return (
     <nav
       aria-label="Main"
-      className="fixed top-3 left-1/2 z-10 w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 rounded-2xl bg-[var(--panel)]"
+      className={glass({
+        variant: "panel",
+        tone: "chrome",
+        className:
+          "fixed top-3 left-1/2 z-10 w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2",
+      })}
     >
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3">
         <Link
@@ -68,7 +74,12 @@ export function Nav() {
           aria-expanded={open}
           aria-controls="nav-menu"
           onClick={() => setOpen((value) => !value)}
-          className={`rounded border border-[#e0e8f0]/40 px-3 py-2 text-sm sm:hidden ${TEXT} ${FOCUS}`}
+          className={glass({
+            variant: "control",
+            tone: "chrome",
+            interactive: true,
+            className: `px-3 py-2 text-sm sm:hidden ${TEXT} ${FOCUS}`,
+          })}
         >
           Menu
         </button>

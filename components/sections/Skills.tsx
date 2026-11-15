@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { content } from "@/lib/content";
+import { glass } from "@/lib/glass";
 import { onFrame, signal } from "@/lib/signal";
 
 export function Skills() {
@@ -119,9 +120,14 @@ export function Skills() {
                       backgroundColor:
                         "color-mix(in srgb, var(--accent) calc(var(--glow, 0) * 25%), transparent)",
                       boxShadow:
-                        "0 0 calc(var(--glow, 0) * 16px) color-mix(in srgb, var(--accent) calc(var(--glow, 0) * 40%), transparent)",
+                        "var(--glass-shadow), 0 0 calc(var(--glow, 0) * 16px) color-mix(in srgb, var(--accent) calc(var(--glow, 0) * 40%), transparent)",
                     }}
-                    className="rounded-full border border-[var(--text)]/25 px-3 py-1.5 text-[length:var(--fs-sm)] text-[var(--text)]"
+                    className={glass({
+                      variant: "chip",
+                      tone: "clear",
+                      className:
+                        "px-3 py-1.5 text-[length:var(--fs-sm)] text-[var(--text)]",
+                    })}
                   >
                     {item}
                   </li>

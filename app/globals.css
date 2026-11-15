@@ -202,3 +202,109 @@ body:not(:has(canvas:not(.fluid-glass__canvas))) [data-zone="surface"] {
   font-family: var(--font-display);
   color: var(--text);
 }
+
+/* ── Glass UI (P9) ─────────────────────────────────────────────────────────
+ * CSS-first glass for chrome, controls and content. No canvas, no WebGL and
+ * no animation loop: interaction is a compositor transition, and reduced
+ * motion turns it off. `lib/glass.ts` is the only way to apply these classes.
+ *
+ * The fill is mixed from the zone's own `--bg-top`, so it always moves away
+ * from `--text` and cannot lower contrast. `chrome` keeps the fixed dark panel
+ * for bars that float over any zone and carry light text.
+ */
+:root {
+  --glass-line: color-mix(in srgb, var(--text) 24%, transparent);
+  --glass-line-strong: color-mix(in srgb, var(--text) 44%, transparent);
+  --glass-highlight: rgb(255 255 255 / 0.18);
+  --glass-shadow:
+    0 1px 0 rgb(255 255 255 / 0.10) inset,
+    0 -1px 0 rgb(0 0 0 / 0.08) inset,
+    0 10px 30px rgb(0 0 0 / 0.14);
+}
+
+.glass {
+  border: 1px solid var(--glass-line);
+  border-radius: 1rem;
+  background:
+    linear-gradient(145deg, var(--glass-highlight), transparent 38%),
+    color-mix(in srgb, var(--bg-top) var(--glass-fill, 34%), transparent);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass--clear {
+  --glass-fill: 18%;
+}
+
+.glass--regular {
+  --glass-fill: 34%;
+}
+
+.glass--strong {
+  --glass-fill: 52%;
+}
+
+.glass--solid {
+  border-color: var(--text);
+  background: var(--text);
+  color: var(--bg-top);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.16) inset,
+    0 10px 24px rgb(0 0 0 / 0.18);
+}
+
+.glass--chrome {
+  border-color: rgb(224 232 240 / 0.22);
+  background:
+    linear-gradient(145deg, rgb(255 255 255 / 0.10), transparent 42%),
+    var(--panel);
+  color: #e0e8f0;
+}
+
+.glass--panel {
+  border-radius: 1rem;
+}
+
+.glass--bar {
+  border-radius: 0;
+}
+
+.glass--card {
+  border-radius: 1rem;
+}
+
+.glass--control,
+.glass--chip {
+  border-radius: 999px;
+}
+
+.glass--field {
+  border-radius: 0.5rem;
+}
+
+.glass--interactive {
+  transition:
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms ease,
+    box-shadow 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.glass--interactive:hover {
+  transform: translateY(-2px);
+  border-color: var(--glass-line-strong);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.14) inset,
+    0 18px 44px rgb(0 0 0 / 0.20);
+}
+
+.glass--interactive:active {
+  transform: translateY(0) scale(0.985);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glass--interactive,
+  .glass--interactive:hover,
+  .glass--interactive:active {
+    transform: none;
+    transition: none;
+  }
+}

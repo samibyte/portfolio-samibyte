@@ -21,7 +21,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 ## P9 Glass UI (see `phases/P9.md`)
 - [x] P9.0 Contract + tokens + skill
 - [x] P9.1 Chrome + content migration
-- [ ] P9.2 Evidence
+- [x] P9.2 Evidence
 
 ## P7 Launch
 - [ ] P7.1 Resolve content slots
