@@ -514,4 +514,69 @@ test.describe("P8 Look: Composition & Evidence", () => {
     expect(ratio).toBeLessThanOrEqual(0.65);
     expect(covAbyss).toBe(0);
   });
+
+  // ── P8.5 Fauna ──────────────────────────────────────────────────────────────
+
+  test("P8.5 fauna: debug 16 coverage > 0 at tier 0; 0 at 100% scroll and tier 1", async ({
+    page,
+  }) => {
+    const measureFaunaCoverage = async (tier: number, scrollVh: number): Promise<number> => {
+      await page.evaluate(
+        ({ t }: { t: number }) => {
+          (window as unknown as { __oceanDebug?: object }).__oceanDebug = { tier: t, layer: 16 };
+        },
+        { t: tier },
+      );
+
+      await page.evaluate((target: number) => {
+        const vh = window.innerHeight;
+        if (target < 1.0) {
+          window.scrollTo(0, Math.round(target * vh));
+        } else {
+          window.scrollTo(0, Math.max(0, document.documentElement.scrollHeight - vh));
+        }
+      }, scrollVh);
+      await page.waitForTimeout(400);
+
+      const shot = decode(await page.locator("canvas[data-ocean-canvas]").screenshot());
+      let lit = 0;
+      const total = shot.width * shot.height;
+      for (let y = 0; y < shot.height; y++) {
+        for (let x = 0; x < shot.width; x++) {
+          const [r, g, b] = shot.at(x, y);
+          if (r + g + b > 15) lit++;
+        }
+      }
+      return lit / total;
+    };
+
+    await page.addInitScript(() => {
+      (
+        window as unknown as { __oceanDebug?: { tier?: number; layer?: number } }
+      ).__oceanDebug = { tier: 0, layer: 16 };
+    });
+    await page.goto("/");
+    await page.waitForLoadState("load");
+    const canvas = page.locator("canvas[data-ocean-canvas]");
+    await canvas.waitFor({ state: "attached" });
+    await page.waitForTimeout(600);
+    await page.addStyleTag({
+      content:
+        "header, nav, main, aside, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+    });
+    await page.waitForTimeout(100);
+
+    const vh15 = 0.15 * 0.3;
+    const covTier0 = await measureFaunaCoverage(0, vh15);
+    const covTier1 = await measureFaunaCoverage(1, vh15);
+    const covAbyss = await measureFaunaCoverage(0, 1.0);
+
+    console.log(
+      `Debug layer 16 (fauna): covTier0=${covTier0.toFixed(4)}, covTier1=${covTier1.toFixed(4)}, covAbyss=${covAbyss.toFixed(4)}`,
+    );
+
+    expect(covTier0).toBeGreaterThan(0);
+    expect(covTier1).toBe(0);
+    expect(covAbyss).toBe(0);
+  });
 });

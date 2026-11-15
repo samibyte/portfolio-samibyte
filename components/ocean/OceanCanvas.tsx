@@ -252,6 +252,14 @@ export function OceanCanvas() {
         },
         uFauna: { value: initialSettings.fauna ? 1 : 0 },
         uCamera: { value: initialSettings.camera ? 1 : 0 },
+        uFaunaConfig: {
+          value: [
+            T.faunaSchools,
+            T.faunaJellies,
+            T.faunaAlpha,
+            0,
+          ] as [number, number, number, number],
+        },
         uBg: { value: uBgValue },
         uFx: { value: uFxValue },
         uDebug: {

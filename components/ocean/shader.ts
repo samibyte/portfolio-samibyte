@@ -29,7 +29,8 @@ uniform vec4  uSpec;         // specPower, specAmp, specFalloff, 0  (P8.3)
 uniform vec4  uParticle;     // particleFar, particleMid, particleNear, dropletCount (P8.4)
 uniform float uFauna;        // 1.0 = on, 0.0 = off (P8.4 schema)
 uniform float uCamera;       // 1.0 = on, 0.0 = off (P8.4 schema)
-uniform int   uDebug;        // 0 = off, 1 = under mask, 11 = sky+surface, 12 = refraction, 13 = caustics, 14 = rays, 15 = particles (P8.4)
+uniform vec4  uFaunaConfig;  // schools, jellies, alpha, (unused) (P8.5)
+uniform int   uDebug;        // 0 = off, 1 = under mask, 11 = sky+surface, 12 = refraction, 13 = caustics, 14 = rays, 15 = particles, 16 = fauna (P8.5)
 
 varying vec2 vUv;
 
@@ -424,6 +425,107 @@ void main() {
 
   if (uDebug == 15) {
     gl_FragColor = vec4(vec3(particleLum), 1.0);
+    return;
+  }
+
+  // Layer 5a (P8.5): Fauna — 5 fish schools + 2 jellyfish as soft SDF silhouettes.
+  // Fogged to local water colour, alpha <= 0.3, slow paths, fewer with depth.
+  // Zero in abyss (uFauna = 0 at tier 1; depth gate fades them before twilight).
+  // Constant bound 8 (5 schools + 2 jellies, plus 1 extra slot for headroom).
+  // No new noise taps: schools use hash-seeded sin wander; jellies use the same.
+  // Named geometric constants: school ellipse aspect 2.5, jelly bell 0.038,
+  //   jelly tentacle count 6, tentacle fringe 0.012, fog blend 0.72.
+  float faunaLum = 0.0;
+  if (uFauna > 0.5 && uFx.z > 0.001) {
+    float faunaSchools = uFaunaConfig.x;
+    float faunaJellies = uFaunaConfig.y;
+    float faunaMaxAlpha = uFaunaConfig.z;
+
+    // Depth fog: fauna fade as depth increases (zero before abyss).
+    float faunaFog = exp(-depth * 5.5) * uFx.z;
+
+    vec3 waterLocal = bgAt(vUv.y);
+    float faunaAcc = 0.0;
+
+    // ── Fish schools (5): soft ellipse SDFs with tail wiggle. ──────────
+    for (int i = 0; i < 5; i++) {
+      if (float(i) >= faunaSchools) break;
+      float fi = float(i);
+
+      // Hash-seeded position seeds.
+      float h1 = hash(vec2(fi * 2.37 + 0.11, fi * 1.63 + 0.57));
+      float h2 = hash(vec2(fi * 3.91 + 0.43, fi * 2.19 + 0.29));
+      float h3 = hash(vec2(fi * 1.47 + 0.83, fi * 4.73 + 0.61));
+      float h4 = hash(vec2(fi * 5.11 + 0.37, fi * 1.29 + 0.91));
+
+      // Slow horizontal drift with gentle tail-wiggle lateral offset.
+      float speed = 0.012 + 0.008 * h3;
+      float px = fract(h1 + t * speed + sin(t * (1.4 + h4) + fi * 2.1) * 0.012);
+      // Vertical band: upper half of water (depth < 0.4) for natural look.
+      float py = 0.32 + 0.36 * h2 + sin(t * 0.07 + fi * 1.9) * 0.015;
+      py = clamp(py, 0.33, 0.68);  // keep in water upper half
+
+      vec2 d = (uv - vec2(px, py)) * vec2(uAspect, 1.0);
+      // Ellipse SDF: horizontal stretch 2.5× for fish-school shape.
+      float ellD = length(vec2(d.x / 2.5, d.y));
+      float r = 0.022 + 0.010 * h4;
+      float school = smoothstep(r, r * 0.25, ellD);
+      // Tail wiggle: oscillate the right edge.
+      float tailPhase = t * (2.0 + h3) + fi * 1.5;
+      float tail = sin(tailPhase) * 0.008;
+      float tailMask = smoothstep(0.0, r, d.x - tail) * school;
+      faunaAcc += (school - tailMask * 0.5) * faunaFog;
+    }
+
+    // ── Jellyfish (2): soft circular bell + fringe of 6 tentacles. ──────
+    for (int i = 0; i < 2; i++) {
+      if (float(i) >= faunaJellies) break;
+      float fi = float(i);
+
+      float h1 = hash(vec2(fi * 7.13 + 0.17, fi * 3.47 + 0.73));
+      float h2 = hash(vec2(fi * 4.59 + 0.61, fi * 1.83 + 0.37));
+      float h3 = hash(vec2(fi * 2.71 + 0.53, fi * 5.37 + 0.19));
+
+      float speed = 0.006 + 0.004 * h3;
+      float px = fract(h1 + t * speed);
+      float py = 0.40 + 0.25 * h2 + sin(t * 0.05 + fi * 2.7) * 0.018;
+      py = clamp(py, 0.42, 0.72);
+
+      vec2 d = (uv - vec2(px, py)) * vec2(uAspect, 1.0);
+      // Bell: half-disc (dome up, flat bottom).
+      float bellR = 0.038;
+      float bellD = length(d);
+      float dome = smoothstep(bellR, bellR * 0.3, bellD) * step(0.0, -d.y);
+      float rim  = smoothstep(bellR * 1.1, bellR * 0.85, bellD)
+                 * smoothstep(bellR * 0.65, bellR * 0.85, bellD);
+
+      // 6 tentacles: thin vertical SDF strokes hanging from the base.
+      float tentacles = 0.0;
+      for (int j = 0; j < 6; j++) {
+        float fj = float(j);
+        float tx = px + (fj / 5.0 - 0.5) * bellR * 2.4 / uAspect;
+        float ty = py + bellR * 0.5 + (0.04 + 0.02 * hash(vec2(fj + fi * 7.0, 0.5)));
+        float sway = sin(t * (1.0 + fj * 0.3) + fi + fj) * 0.006;
+        vec2 td = (uv - vec2(tx + sway, ty)) * vec2(uAspect, 1.0);
+        float tw = 0.004;
+        float tLen = 0.055 + 0.025 * hash(vec2(fj * 2.1, fi));
+        float tentacle = smoothstep(tw, 0.0, abs(td.x))
+                       * smoothstep(tLen, 0.0, td.y)
+                       * step(0.0, td.y);
+        tentacles += tentacle * 0.4;
+      }
+      faunaAcc += (dome * 0.9 + rim * 0.5 + tentacles) * faunaFog;
+    }
+
+    faunaAcc = clamp(faunaAcc, 0.0, 1.0);
+    // Fog to local water colour: soft silhouette, never sticker-sharp.
+    vec3 faunaCol = mix(waterLocal, vec3(0.78, 0.92, 0.96), 0.28);
+    faunaLum = faunaAcc * faunaMaxAlpha;
+    water = mix(water, faunaCol, faunaLum * under);
+  }
+
+  if (uDebug == 16) {
+    gl_FragColor = vec4(vec3(faunaLum), 1.0);
     return;
   }
 

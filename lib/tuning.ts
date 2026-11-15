@@ -5,11 +5,15 @@ export const T = {
   dprMax: 2, dprMid: 1.5, dprLow: 1,
   fpsLow: 30, fpsMid: 45, warmupS: 2,
   snowMax: 20, glowMax: 8, bubbleMax: 24, octaves: 4, octavesLow: 2,
-  particleScaleLow: 0.5, // P8.4 replaces snowLow
-  particleFar: 14,       // 14 tiny at 0.5x scroll
+  particleScaleLow: 0.5,  // P8.4 replaces snowLow
+  particleBlend: 0.5,     // P8.4 final water-blend multiplier for all particle layers
+  particleFar: 14,        // 14 tiny at 0.5x scroll
   particleMid: 7,         // 7 at 1x scroll
   particleNear: 4,        // 4 large soft blurred discs at 1.8x scroll
   dropletCount: 3,        // 3 lens-wet droplets/streaks moving opposite to scroll
+  faunaSchools: 5,        // P8.5: fish schools (SDF silhouettes, tier 0 only)
+  faunaJellies: 2,        // P8.5: jellyfish (SDF silhouettes, tier 0 only)
+  faunaAlpha: 0.28,       // P8.5: max additive alpha (must be <= 0.3)
   plungeDuration: 3, // s
   gapVh: 25, // empty band between sections
   bobPx: 8,

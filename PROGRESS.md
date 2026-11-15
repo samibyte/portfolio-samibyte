@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P8 · **Next:** P8.5
+**Phase:** P8 · **Next:** P8.6
 
 Task index. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS`, the checks named in the task's **Done** passed, and the commit exists.
@@ -14,9 +14,14 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P8.2 Sky + surface + waterline
 - [x] P8.3 Refraction + caustics + rays
 - [x] P8.4 Particles + marine-snow replacement
-- [ ] P8.5 Fauna
+- [x] P8.5 Fauna
 - [ ] P8.6 Camera + vignette + grain
 - [ ] P8.7 Tune + evidence + final gate
+
+## P9 Glass UI (see `phases/P9.md`)
+- [x] P9.0 Contract + tokens + skill
+- [x] P9.1 Chrome + content migration
+- [ ] P9.2 Evidence
 
 ## P7 Launch
 - [ ] P7.1 Resolve content slots
