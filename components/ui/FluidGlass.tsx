@@ -1302,8 +1302,12 @@ export default function FluidGlass({
       let goalX = body.anchorX + drift[0];
       let goalY = body.anchorY + drift[1];
       if (s.interaction === "follow" && pointer.inside) {
-        goalX = pointer.x;
-        goalY = pointer.y;
+        // Keep the whole mark inside the canvas. Without this the glass centres
+        // on the raw pointer, so anything within a radius of an edge is sliced
+        // by the canvas boundary (most visible at the page's bottom edge).
+        const edge = radius() * 1.08;
+        goalX = clamp(pointer.x, edge, Math.max(edge, view.width - edge));
+        goalY = clamp(pointer.y, edge, Math.max(edge, view.height - edge));
       }
       const omega =
         (pointer.grabbed ? 34 : 24) *
