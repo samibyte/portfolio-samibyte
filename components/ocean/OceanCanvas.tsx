@@ -117,6 +117,12 @@ export function OceanCanvas() {
       const uMouseValue: [number, number] = [-1, -1];
       const skyRgb = hexToRgb(ZONES[0].bgTop);
 
+      const initialDebug =
+        typeof window !== "undefined"
+          ? (window as unknown as { __oceanDebug?: { layer?: number } })
+              .__oceanDebug
+          : undefined;
+
       const uniforms = {
         uTime: { value: 0 },
         uWaterline: { value: 0.7 as number },
@@ -130,7 +136,10 @@ export function OceanCanvas() {
         uSky: { value: skyRgb },
         uBg: { value: uBgValue },
         uFx: { value: uFxValue },
-        uDebug: { value: 0 as number },
+        uDebug: {
+          value:
+            typeof initialDebug?.layer === "number" ? initialDebug.layer : 0,
+        },
       };
 
       program = new Program(gl, {
@@ -156,6 +165,7 @@ export function OceanCanvas() {
       let lastRenderW = -1;
       let lastRenderH = -1;
       let lastRenderIsHome: boolean | null = null;
+      let lastRenderDebug = -1;
 
       const resize = () => {
         if (!renderer) return;
@@ -267,6 +277,15 @@ export function OceanCanvas() {
           uniforms.uPlunge.value = -1;
         }
 
+        // 10. uDebug from window.__oceanDebug?.layer
+        const debug =
+          typeof window !== "undefined"
+            ? (window as unknown as { __oceanDebug?: { layer?: number } })
+                .__oceanDebug
+            : undefined;
+        uniforms.uDebug.value =
+          typeof debug?.layer === "number" ? debug.layer : 0;
+
         // Static tiers render only when a value changed (no animation)
         if (settings.static) {
           if (
@@ -275,7 +294,8 @@ export function OceanCanvas() {
             vh === lastRenderVh &&
             w === lastRenderW &&
             h === lastRenderH &&
-            isHome === lastRenderIsHome
+            isHome === lastRenderIsHome &&
+            uniforms.uDebug.value === lastRenderDebug
           ) {
             return;
           }
@@ -288,6 +308,7 @@ export function OceanCanvas() {
         lastRenderW = w;
         lastRenderH = h;
         lastRenderIsHome = isHome;
+        lastRenderDebug = uniforms.uDebug.value;
       });
 
       return () => {

@@ -24,6 +24,11 @@ export interface SignalState {
 
 export type QualityTier = 0 | 1 | 2 | 3 | 4;
 
+export interface OceanDebug {
+  tier?: QualityTier;
+  layer?: number;
+}
+
 export interface TierInputs {
   fxOff: boolean;
   webglOk: boolean;
@@ -255,9 +260,15 @@ function readFxOff(): boolean {
   return new URLSearchParams(window.location.search).get("fx") === "off";
 }
 
-/** Dev-only override: `?tier=0…4` (P6.1 evidence). Never active in production. */
+/** Dev-only or test override: `window.__oceanDebug.tier` or `?tier=0…4`. */
 export function readForcedTier(): QualityTier | null {
   if (typeof window === "undefined") return null;
+
+  const debug = (window as unknown as { __oceanDebug?: OceanDebug }).__oceanDebug;
+  if (debug && typeof debug.tier === "number" && debug.tier >= 0 && debug.tier <= 4) {
+    return debug.tier as QualityTier;
+  }
+
   if (process.env.NODE_ENV !== "development") return null;
 
   const raw = new URLSearchParams(window.location.search).get("tier");
@@ -307,7 +318,8 @@ function loop(now: number): void {
     typeof window !== "undefined" &&
     (process.env.NODE_ENV === "development" ||
       (window as unknown as { __ENABLE_OCEAN_DEBUG__?: boolean })
-        .__ENABLE_OCEAN_DEBUG__) &&
+        .__ENABLE_OCEAN_DEBUG__ ||
+      (window as unknown as { __oceanDebug?: OceanDebug }).__oceanDebug) &&
     !(window as unknown as { __ocean?: SignalState }).__ocean
   ) {
     (window as unknown as { __ocean?: SignalState }).__ocean = signal;
@@ -336,6 +348,7 @@ function loop(now: number): void {
   tierInputs.coarse = signal.coarse;
   tierInputs.width = window.innerWidth;
   tierInputs.adaptiveLow = signal.adaptiveLow;
+  signal.forcedTier = readForcedTier();
   tierInputs.forced = signal.forcedTier;
   signal.tier = decideTier(tierInputs);
 

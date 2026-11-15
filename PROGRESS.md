@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P7 · **Next:** P7.1
+**Phase:** P8 · **Next:** P8.0
 
 Machine-readable task list. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS` **and** the commit exists.
@@ -78,6 +78,16 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P6.5 Accessibility pass
 - [x] P6.6 C5 and C6 tests
 - [x] P6.7 Lighthouse
+
+## P8 Ocean overhaul (see `phases/P8.md`)
+- [ ] P8.0 Evidence harness
+- [ ] P8.1 Palette + tokens + fallback
+- [ ] P8.2 Sky + surface + waterline
+- [ ] P8.3 Refraction + caustics + rays
+- [ ] P8.4 Particles + marine-snow replacement
+- [ ] P8.5 Fauna
+- [ ] P8.6 Camera + vignette + grain
+- [ ] P8.7 Tune + evidence + final gate
 
 ## P7 Launch
 - [ ] P7.1 Resolve content slots
