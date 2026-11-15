@@ -26,7 +26,6 @@ export const PROJECTS: Project[] = [
     source: "https://github.com/samibyte/key-space-client",
     live: "https://key-space-byte.vercel.app/",
     role: "Full-Stack Web Developer",
-    architecture: ["Browser (Next.js App Router)", "Server (Node.js/Express)", "Database (PostgreSQL via Prisma)", "Auth (JWT with HTTP-only cookies)"],
     decision: {
       title: "Custom JWT route proxy vs. Next.js middleware",
       tradeoff: "Chose edge-friendly proxy.ts for dynamic fallback routing and HTTP-only cookie management over Next.js middleware to maintain full control over token refresh and role checks.",
