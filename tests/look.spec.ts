@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { decode, relativeLuma, hue, saturation } from "./helpers/pixels";
+import { decode, relativeLuma, hue, saturation, meanRegion } from "./helpers/pixels";
 import { ZONES } from "../lib/zones";
 
 test.use({
@@ -25,7 +25,7 @@ test.describe("P8 Look: Composition & Evidence", () => {
     await page.goto("/");
     await page.waitForLoadState("load");
 
-    const canvas = page.locator("canvas");
+    const canvas = page.locator("canvas[data-ocean-canvas]");
     await canvas.waitFor({ state: "attached" });
     await expect(canvas).toBeAttached();
 
@@ -170,7 +170,7 @@ test.describe("P8 Look: Composition & Evidence", () => {
     await page.goto("/");
     await page.waitForLoadState("load");
 
-    const canvas = page.locator("canvas");
+    const canvas = page.locator("canvas[data-ocean-canvas]");
     await canvas.waitFor({ state: "attached" });
     await expect(canvas).toBeAttached();
     await page.waitForTimeout(600);
@@ -218,7 +218,7 @@ test.describe("P8 Look: Composition & Evidence", () => {
     await page.goto("/");
     await page.waitForLoadState("load");
 
-    const canvas = page.locator("canvas");
+    const canvas = page.locator("canvas[data-ocean-canvas]");
     await canvas.waitFor({ state: "attached" });
     await expect(canvas).toBeAttached();
     await page.waitForTimeout(600);
@@ -258,5 +258,195 @@ test.describe("P8 Look: Composition & Evidence", () => {
 
     expect(maxStep).toBeGreaterThan(0.02);
     expect(runnerUp).toBeLessThanOrEqual(maxStep * (2 / 3));
+  });
+
+  // ── P8.3 Refraction + caustics + rays ───────────────────────────────────────
+
+  test("P8.3 foreground flow: near-field (rows 32-48%) changes faster than far-field (rows 82-98%) over 200ms, ratio >= 1.5", async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      (
+        window as unknown as { __oceanDebug?: { tier?: number } }
+      ).__oceanDebug = { tier: 0 };
+    });
+
+    await page.goto("/");
+    await page.waitForLoadState("load");
+
+    const canvas = page.locator("canvas[data-ocean-canvas]");
+    await canvas.waitFor({ state: "attached" });
+    await page.waitForTimeout(600);
+
+    await page.addStyleTag({
+      content:
+        "header, nav, main, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+    });
+    await page.waitForTimeout(100);
+
+    const shot1 = decode(await canvas.screenshot());
+    await page.waitForTimeout(200);
+    const shot2 = decode(await canvas.screenshot());
+
+    const w = shot1.width;
+    const h = shot1.height;
+    const xStart = Math.round(w * 0.1);
+    const xEnd = Math.round(w * 0.9);
+
+    // Mean |luma delta| in a row band between two frames.
+    const meanDelta = (fromFrac: number, toFrac: number): number => {
+      let sum = 0;
+      let count = 0;
+      for (let y = Math.round(h * fromFrac); y < Math.round(h * toFrac); y++) {
+        for (let x = xStart; x < xEnd; x++) {
+          const l1 = relativeLuma(shot1.at(x, y));
+          const l2 = relativeLuma(shot2.at(x, y));
+          sum += Math.abs(l2 - l1);
+          count++;
+        }
+      }
+      return count > 0 ? sum / count : 0;
+    };
+
+    // GL y=0 is bottom; canvas y=0 is top.
+    // "rows 32-48%" in GL space = canvas rows 52-68% (1 - 0.48 to 1 - 0.32).
+    // "rows 82-98%" in GL space = canvas rows 2-18%.
+    // Near-field (foreground) in GL = bottom of water = top of canvas.
+    // Far-field in GL = just below waterline = mid canvas.
+    // Using canvas-space fractions directly (canvas y increases downward, GL y increases upward):
+    // GL 32-48% = canvas (1-0.48)..(1-0.32) = canvas 52-68%
+    // GL 82-98% = canvas (1-0.98)..(1-0.82) = canvas 2-18%
+    const nearDelta = meanDelta(0.52, 0.68); // GL near-field (foreground, large features)
+    const farDelta = meanDelta(0.02, 0.18);  // GL far-field (just below waterline, small features)
+
+    const ratio = farDelta > 0.0001 ? nearDelta / farDelta : 0;
+    console.log(
+      `Foreground flow delta: near=${nearDelta.toFixed(5)} far=${farDelta.toFixed(5)} ratio=${ratio.toFixed(3)}`,
+    );
+
+    expect(ratio).toBeGreaterThanOrEqual(1.5);
+  });
+
+  test("P8.3 depth light: top-half water mean luma >= bottom-half water + 0.02", async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      (
+        window as unknown as { __oceanDebug?: { tier?: number } }
+      ).__oceanDebug = { tier: 0 };
+    });
+
+    await page.goto("/");
+    await page.waitForLoadState("load");
+
+    const canvas = page.locator("canvas[data-ocean-canvas]");
+    await canvas.waitFor({ state: "attached" });
+    await page.waitForTimeout(600);
+
+    await page.addStyleTag({
+      content:
+        "header, nav, main, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+    });
+    await page.waitForTimeout(100);
+
+    const img = decode(await canvas.screenshot());
+    const h = img.height;
+    const xStart = Math.round(img.width * 0.1);
+    const xEnd = Math.round(img.width * 0.9);
+
+    // Water occupies canvas rows ~30-100% (GL 0-70%). Split at 65% canvas row.
+    // Top-half water: canvas rows 30-65% (GL 35-70%, near the waterline, more light).
+    // Bottom-half water: canvas rows 65-100% (GL 0-35%, deep water, less light).
+    const topHalfMean = meanRegion(img, {
+      x: xStart,
+      y: Math.round(h * 0.30),
+      width: xEnd - xStart,
+      height: Math.round(h * 0.35),
+    });
+    const botHalfMean = meanRegion(img, {
+      x: xStart,
+      y: Math.round(h * 0.65),
+      width: xEnd - xStart,
+      height: Math.round(h * 0.35),
+    });
+
+    console.log(
+      `Depth light: top-half water luma ${topHalfMean.luma.toFixed(4)} vs bottom-half ${botHalfMean.luma.toFixed(4)} (delta ${(topHalfMean.luma - botHalfMean.luma).toFixed(4)})`,
+    );
+
+    expect(topHalfMean.luma).toBeGreaterThanOrEqual(botHalfMean.luma + 0.02);
+  });
+
+  test("P8.3 layers: debug 12 (refraction), 13 (caustics), 14 (rays) coverage > 0 at 15% scroll, 0 at 100%", async ({
+    page,
+  }) => {
+    // 15% scroll = scrollY = 0.15 * 0.3 * vh (surface band), uWaterline ≈ 0.745.
+    // At 15% scroll caustics and rays should be active (surface zone uFx.x, uFx.y > 0).
+    // At 100% scroll = abyss: uWaterline >> 1, all fx should be 0.
+
+    // Helper: measure non-black coverage in a debug-layer screenshot.
+    const measureCoverage = async (debugLayer: number, scrollVh: number): Promise<number> => {
+      await page.addInitScript(() => { /* reinstalled below */ });
+      const targetDebug = debugLayer;
+      await page.evaluate(
+        ({ layer }: { layer: number }) => {
+          (window as unknown as { __oceanDebug?: object }).__oceanDebug = { tier: 0, layer };
+        },
+        { layer: targetDebug },
+      );
+
+      await page.evaluate((target: number) => {
+        const vh = window.innerHeight;
+        if (target < 1.0) {
+          window.scrollTo(0, Math.round(target * vh));
+        } else {
+          window.scrollTo(0, Math.max(0, document.documentElement.scrollHeight - vh));
+        }
+      }, scrollVh);
+      await page.waitForTimeout(300);
+
+      const shot = decode(await page.locator("canvas[data-ocean-canvas]").screenshot());
+      let lit = 0;
+      const total = shot.width * shot.height;
+      for (let y = 0; y < shot.height; y++) {
+        for (let x = 0; x < shot.width; x++) {
+          const [r, g, b] = shot.at(x, y);
+          if (r + g + b > 15) lit++;
+        }
+      }
+      return lit / total;
+    };
+
+    await page.addInitScript(() => {
+      (
+        window as unknown as { __oceanDebug?: { tier?: number; layer?: number } }
+      ).__oceanDebug = { tier: 0, layer: 12 };
+    });
+    await page.goto("/");
+    await page.waitForLoadState("load");
+    const canvas = page.locator("canvas[data-ocean-canvas]");
+    await canvas.waitFor({ state: "attached" });
+    await page.waitForTimeout(600);
+    await page.addStyleTag({
+      content:
+        "header, nav, main, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+    });
+    await page.waitForTimeout(100);
+
+    // Scroll = 15% of surface = 0.15 * 0.3 vh.
+    const vh15 = 0.15 * 0.3;
+
+    for (const layer of [12, 13, 14] as const) {
+      const cov15 = await measureCoverage(layer, vh15);
+      const cov100 = await measureCoverage(layer, 1.0);
+      console.log(
+        `Debug layer ${layer}: coverage@15%scroll=${cov15.toFixed(4)}, coverage@100%scroll=${cov100.toFixed(4)}`,
+      );
+      expect(cov15).toBeGreaterThan(0);
+      // At 100% scroll the waterline is >>1 and 'under' = 1.0 everywhere, but
+      // rays/caustics strength is exp(-depth*k) which approaches 0 deep down.
+      // Allow a small tolerance (< 0.01 coverage) for stray pixels.
+      expect(cov100).toBeLessThan(0.01);
+    }
   });
 });

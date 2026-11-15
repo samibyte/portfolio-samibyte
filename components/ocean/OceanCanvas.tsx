@@ -59,6 +59,7 @@ export function OceanCanvas() {
 
     const canvas = document.createElement("canvas");
     canvas.setAttribute("aria-hidden", "true");
+    canvas.dataset.oceanCanvas = "";
     canvas.className =
       "fixed inset-0 z-0 pointer-events-none opacity-0 transition-opacity duration-[400ms] ease-in-out";
     container.appendChild(canvas);
@@ -201,6 +202,39 @@ export function OceanCanvas() {
         },
         uRippleCfg: {
           value: [T.rippleFreq, T.rippleSpeed, T.rippleFalloff, 0] as [
+            number,
+            number,
+            number,
+            number,
+          ],
+        },
+        // P8.3 Refraction + caustics + rays
+        uRay: {
+          value: [T.rayCount, T.rayWidth, T.rayFalloff, T.rayAmp] as [
+            number,
+            number,
+            number,
+            number,
+          ],
+        },
+        uCaustic: {
+          value: [T.causticCells, T.causticAmp, T.perspNear, T.perspFar] as [
+            number,
+            number,
+            number,
+            number,
+          ],
+        },
+        uPersp: {
+          value: [T.perspNearScale, T.fogStrength, T.flowAmp2, T.flowSpeed2] as [
+            number,
+            number,
+            number,
+            number,
+          ],
+        },
+        uSpec: {
+          value: [T.specPower, T.specAmp, 0, 0] as [
             number,
             number,
             number,

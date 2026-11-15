@@ -26,4 +26,23 @@ export const T = {
   flowAmp: 0.24, flowSpeed: 0.05, warpAmp: 0.06, warpSpeed: 0.4,
   foamWidth: 0.006, foamLight: 0.92, sparkle: 0.35,
   rippleFreq: 90, rippleSpeed: 9, rippleFalloff: 9,
+
+  // P8.3 Refraction + caustics + rays
+  // Sun anchor in sky-band UV space (uSun.x/y unchanged, same as sky skyLayer).
+  // sunUV.y = uWaterline + uSun.y * (1 - uWaterline) anchors the shaft base
+  // at the stable (undisplaced) waterline, not the waving wl, so shafts don't wobble.
+  rayCount: 7,          // number of shafts (uniform cutoff loop)
+  rayWidth: 0.045,      // Gaussian half-width of each shaft (screen-space)
+  rayFalloff: 7.5,      // depth attenuation: exp(-k * depth_below_wl), k ~ 6-9
+  rayAmp: 0.12,         // peak additive amplitude per shaft (C4: sum <= 0.06 in dark zones)
+  causticCells: 10,     // lattice cells across screen (analytic, 0 taps)
+  causticAmp: 0.35,     // multiply strength
+  perspNear: 0.08,      // horizon guard (1/max(perspNear, depth)) for near-field scale
+  perspFar: 1.8,        // UV scale for far-field (small features far away)
+  perspNearScale: 5.5,  // UV scale for near-field foreground
+  fogStrength: 0.18,    // distance fog blend on water body (far-field contrast reduction)
+  flowAmp2: 0.14,       // counter-moving second flow amplitude
+  flowSpeed2: 0.032,    // second flow speed (counter direction)
+  specPower: 28.0,      // pow(dot, specPower): gloss exponent for wave specular
+  specAmp: 0.055,       // peak specular amplitude (additive)
 } as const;

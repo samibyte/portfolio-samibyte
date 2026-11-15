@@ -21,23 +21,30 @@ uniform vec3  uBg[5];        // bgAt() at the 5 viewport rows, top -> bottom; uB
 uniform vec4  uFx;           // rays, caustics, snow, glow at viewport centre
 uniform vec4  uWaveFreq, uWaveSpeed;
 uniform vec4  uSun, uCloud, uDepth, uFlow, uFoam, uRippleCfg;
-uniform int   uDebug;        // 0 = off, 1 = under mask, 11 = sky+surface (P8.2)
+uniform vec4  uRay;          // rayCount, rayWidth, rayFalloff, rayAmp  (P8.3)
+uniform vec4  uCaustic;      // causticCells, causticAmp, causticFalloff, causticSpeed (P8.3)
+uniform vec4  uPersp;        // perspNearScale, perspFarScale, fogStrength, flowBlend (P8.3)
+uniform vec4  uRefr;         // refractNear, refractFar, refractScale, refractSpeed (P8.3)
+uniform vec4  uSpec;         // specPower, specAmp, specFalloff, 0  (P8.3)
+uniform int   uDebug;        // 0 = off, 1 = under mask, 11 = sky+surface, 12 = refraction, 13 = caustics, 14 = rays (P8.3)
 
 varying vec2 vUv;
 
-// Noise budget (P8): <= 12 taps/pixel at uOct = 4.
-//   flow fbm ............. 4   (uOct, rotated octaves; drives flow, foam and mirror band)
+// Noise budget (P8): <= 11 taps/pixel at uOct = 4.
+//   flow fbm ............. 4   (uOct rotated octaves; drives flow, foam and mirror band)
 //   sky clouds ........... 3   (one 3-octave field reused by four cloud envelopes)
-//   refraction warp ...... 2   (P8.3)
-//   god rays ............. 1   (P8.3)
-//   particle flutter ..... 1   (P8.4)
+//   refraction warp ...... 2   (P8.3: one noise per axis, advected by uTime)
+//   god rays ............. 1   (P8.3: one noise tap breaks the shaft edge)
+//   particle flutter ..... 1   (P8.4; snow layer, behind uFx.z gate)
 //   caustics, glow ....... 0   (analytic lattice / sine wander)
 //   total ............... 11
+// P8.3 trade: the caustic noise warp and the glow wander are gone, the bubble
+// wobble reuses the flow sample, and that pays for the two refraction taps.
 // Named geometric constants (not tuning): deep-water factor 0.30, fbm mean 0.47,
-// mask AA half-width 0.0015, foam asymmetry 2.6 / 0.55, cloud sphere 0.42.
-// Worst case per pixel is 11 (flow + caustics + rays + one sky cloud field);
-// the water lattice is also evaluated above the waterline and discarded by the
-// mix, so the sky path is not cheaper than this table. Keep the total at 11.
+// mask AA half-width 0.0015, foam asymmetry 2.6 / 0.55, cloud sphere 0.42,
+// near-field edge 0.5, refraction debug gain 40.0, refraction second scale 1.7,
+// refraction skew 0.7 / 0.6, ray fan step 0.08, ray phase step 1.618,
+// ray flicker rate 3.0, caustic lattice skew 1.2 / 0.3, water fbm scale 2.5 / 1.5.
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 
@@ -158,7 +165,14 @@ void main() {
 
   if (uDebug == 1) { gl_FragColor = vec4(vec3(under), 1.0); return; }
 
-  // 2. Colour-sample displacement only: ripple ring + turbulence, water only.
+  // 2. Depth below the stable waterline (P8.3 perspective coordinate): 0 at the
+  // surface, growing downward. Drives the depth light, caustic and ray falloff.
+  // Uses uWaterline (not the waving wl) so moving crests never move the layers.
+  float depth = max(0.0, uWaterline - vUv.y);
+
+  // 3. Refraction: colour-sample displacement only (never the mask or sky).
+  //    Ripple ring + turbulence come from the C3 springs; the advected
+  //    two-tap domain warp is the P8.3 refraction field.
   vec2 m = vUv - uMouse;
   vec2 ma = m * vec2(uAspect, 1.0);
   float dist = length(ma);
@@ -170,56 +184,154 @@ void main() {
   uv += rdir * ring * uRipple * 1.15 * (1.0 + uMouseVel);
   uv += m * exp(-dot(ma, ma) * 30.0) * uRipple * (1.0 + uMouseVel);
   uv += sin(uv.yx * 10.0 + t * 2.0) * uTurb * 0.01;
+
+  // Zone gate: uFx.x/uFx.y (rays, caustics at the viewport centre) already fade
+  // to 0 in the abyss, so the refraction field does too (C2: abyss is still).
+  float refractStrength = under * clamp(max(uFx.x, uFx.y) * 2.0, 0.0, 1.0);
+  // Near-field warp amplitude is visibly larger than the far field (bottom vs top).
+  float refrAmp = mix(uRefr.y, uRefr.x, smoothstep(0.0, 0.5, depth));
+  vec2 refrP = vUv * vec2(uAspect, 1.0) * uRefr.z;
+  vec2 refrWarp = vec2(
+    noise(refrP + vec2(t * uRefr.w, -t * uRefr.w * 0.7)),
+    noise(refrP * 1.7 - vec2(t * uRefr.w * 0.6, t * uRefr.w))
+  ) - 0.5;
+  vec2 refrDisp = refrWarp * refrAmp * refractStrength;
+  uv += refrDisp;
   uv = mix(vUv, uv, under);          // never distort the sky
+
+  if (uDebug == 12) {
+    // Refraction isolation: displacement magnitude as brightness (0 in abyss).
+    float refracMag = length(refrDisp) * 80.0;
+    gl_FragColor = vec4(vec3(clamp(refracMag, 0.0, 1.0)), 1.0);
+    return;
+  }
 
   // 3. Sky (30%): gradient, cloud ranks, sun.
   vec3 sky = skyLayer(vUv, wl, t);
 
-  // 4. Water body: palette base, then a near-field depth ramp toward deep teal.
-  //    Gated by uWaterline so it exists only while the camera is at the surface.
+  // 4. Perspective scale: near rows (bottom of the frame) see larger, faster
+  //    features than far rows near the waterline.
+  float nearScale = mix(uPersp.y, uPersp.x, smoothstep(0.0, 0.5, depth));
+
+  // 5. Water body: palette base, near-field depth ramp, distance fog.
   vec3 water = bgAt(vUv.y);
-  float near = 1.0 - smoothstep(uDepth.z, uDepth.w, uWaterline);
-  float ramp = (1.0 - smoothstep(0.0, uDepth.x, vUv.y)) * near;
+  float nearBand = 1.0 - smoothstep(uDepth.z, uDepth.w, uWaterline);
+  float ramp = (1.0 - smoothstep(0.0, uDepth.x, vUv.y)) * nearBand;
   water = mix(water, uWaterTop * 0.30, ramp * uDepth.y);
 
-  // Layer 1: Flow - hue-preserving modulation, two drift directions, evolving warp.
+  // Distance fog: far field (top of water) loses contrast toward the fog colour.
+  float fogT = smoothstep(uWaterline - 0.6, uWaterline - 0.05, vUv.y) * uPersp.z;
+  vec3 fogCol = mix(water, bgAt(uWaterline), fogT);
+  water = mix(water, fogCol, fogT * under);
+
+  // 6. Layer 1: Flow — two drift fields. The counter field reuses the same fbm
+  //    call shape (0 extra taps) and adds the temporal break-up.
   vec2 warp = vec2(sin(vUv.y * 3.1 + t * uFlow.w),
                    cos(vUv.x * 2.3 - t * uFlow.w * 0.7)) * uFlow.z;
-  float nf = fbm((uv + warp) * vec2(2.5, 1.5) + vec2(t * uFlow.y, t * 0.013));
-  water *= 1.0 + (nf - 0.47) * uFlow.x * (1.0 + uTurb) * (1.0 + ramp * 0.8);
+  vec2 flowUV = (uv + warp) * vec2(2.5, 1.5) * nearScale;
 
-  // Interface band: the bright, rippled underside of the surface, fades over uBandDepth.
+  float nf  = fbm(flowUV + vec2(t * uFlow.y, t * 0.013));
+  float nf2 = fbm(-flowUV * 0.73 + vec2(-t * uFlow.y * 0.8, t * 0.019 + 3.7));
+  float nfBlend = mix(nf, nf2, uPersp.w);
+  water *= 1.0 + (nfBlend - 0.47) * uFlow.x * (1.0 + uTurb) * (1.0 + ramp * 0.8);
+
+  // 7. Specular from the analytic wave slope (0 taps). The height varies along
+  //    x, so the normal tilts in x and stays planar in y: N = (-slope, 0, 1).
+  float dwdx =   uWaveFreq.x * uWaveAmp * 0.25 * cos(vUv.x * uWaveFreq.x + t * uWaveSpeed.x)
+               + 0.55 * uWaveFreq.y * uWaveAmp * 0.25 * cos(vUv.x * uWaveFreq.y - t * uWaveSpeed.y)
+               + 0.30 * uWaveFreq.z * uWaveAmp * 0.25 * cos(vUv.x * uWaveFreq.z + t * uWaveSpeed.z)
+               + 0.16 * uWaveFreq.w * uWaveAmp * 0.25 * cos(vUv.x * uWaveFreq.w - t * uWaveSpeed.w);
+  vec3 N = normalize(vec3(-dwdx * 0.4, 0.0, 1.0));
+  // Sun anchor on the stable waterline, so the highlight does not wobble.
+  float sunAnchorY = uWaterline + uSun.y * (1.0 - uWaterline);
+  vec2 sunDirUV = normalize(vec2(uSun.x - vUv.x, sunAnchorY - vUv.y) * vec2(uAspect, 1.0));
+  vec3 L = normalize(vec3(sunDirUV.x, sunDirUV.y * 0.7, 0.9));
+  vec3 V = vec3(0.0, 0.0, 1.0);                 // viewer direction, normal to screen
+  vec3 H = normalize(L + V);                     // Blinn half-vector
+  float spec = pow(max(dot(N, H), 0.0), uSpec.x) * exp(-depth * uSpec.z);
+  vec3 specCol = mix(uSky, vec3(1.0), 0.9);
+  water += specCol * spec * uSpec.y * under;
+
+  // Interface band: bright underside of surface, fades over uBandDepth (15%).
   float band = 1.0 - smoothstep(0.0, uBandDepth, wl - vUv.y);
+  // Slope-dependent thickness: wider under wave crests (B2).
+  float bandWiden = 1.0 + 0.4 * smoothstep(0.3, 0.8, nf);
+  band *= bandWiden;
   vec3 horizonSky = mix(uSky, vec3(1.0), uSkyHorizon * 0.85);
   water = mix(water, horizonSky * (0.62 + 0.30 * smoothstep(0.35, 0.80, nf)),
-              band * uBandLight * (1.0 - 0.4 * ramp));
+              clamp(band, 0.0, 1.0) * uBandLight * (1.0 - 0.4 * ramp));
 
   // Surface touch: thin bright crests riding the ripple ring, water only (0 taps).
-  // uRipple is the same amplitude the displacement uses, so tier 2 (no ripple) stays clean.
   float glint = pow(max(0.0, ring), 8.0) * exp(-dist * 1.2) * under;
   water += vec3(0.55, 0.78, 0.88) * glint * (uRipple * 10.0);
 
-  // Layer 2: Caustics - two passes of abs(sin) lattice on warped uv, strength uFx.y * vUv.y (multiply only)
-  if (uFx.y > 0.001) {
-    float n1 = (noise(uv * 3.0 + vec2(t * 0.05, 0.0)) - 0.5) * 0.5;
-    float n2 = (noise(uv * 4.5 - vec2(0.0, t * 0.05)) - 0.5) * 0.5;
-    vec2 cUv1 = uv * 8.0 + vec2(t * 0.15 + n1, t * 0.1 + n1 * 0.7);
-    vec2 cUv2 = uv * 13.0 - vec2(t * 0.1 - n2 * 0.7, t * 0.15 + n2);
-    float c1 = abs(sin(cUv1.x + sin(cUv1.y * 1.2)));
-    float c2 = abs(sin(cUv2.y + sin(cUv2.x * 1.2)));
-    float caustics = (c1 + c2) * 0.5;
-    water *= 1.0 + caustics * (uFx.y * vUv.y * 0.6);
+  // 8. Layer 2: Caustics (P8.3 B4) — fully analytic abs(sin) lattice, 0 taps.
+  // 8. Layer 2: Caustics (P8.3) — analytic warped lattice, 0 taps.
+  //    10 cells across (uCaustic.x), strongest in the top half, multiply-only.
+  //    uCaustic.x/y/z/w = cells, amp, falloff, speed.
+  float causticStrength = exp(-depth * uCaustic.z) * uFx.y;
+  float caustics = 0.0;
+  if (causticStrength > 0.001) {
+    vec2 cUV = uv * uCaustic.x;
+    // Analytic warped phase (the noise warp taps are not needed at this scale).
+    float ph1 = t * uCaustic.w + sin(cUV.y * 1.2 + t * 0.07) * 0.3;
+    float ph2 = -t * uCaustic.w * 0.8 + cos(cUV.x * 1.2 - t * 0.05) * 0.3;
+    float c1 = abs(sin(cUV.x + ph1));
+    float c2 = abs(sin(cUV.y + ph2));
+    caustics = (c1 + c2) * 0.5;
+    water *= 1.0 + caustics * (uCaustic.y * causticStrength);
+  }
+  if (uDebug == 13) {
+    gl_FragColor = vec4(vec3(caustics * causticStrength), 1.0);
+    return;
   }
 
-  // Layer 3: God rays - soft bands along uv.x + (uWaterline - uv.y) * 0.3, slow sway, strength uFx.x
-  if (uFx.x > 0.001) {
-    float rayAngle = uv.x + (uWaterline - uv.y) * 0.3;
-    float sway = sin(t * 0.4 + uv.y * 2.0) * 0.04;
-    float rayCoord = rayAngle + sway;
-    float rayNoise = noise(vec2(rayCoord * 3.5, t * 0.08));
-    float rayBand = sin(rayCoord * 10.0 + rayNoise * 2.0) * 0.5 + 0.5;
-    float rays = smoothstep(0.25, 0.75, rayBand) * (0.4 + 0.6 * clamp(vUv.y, 0.0, 1.0));
-    water += vec3(0.12, 0.18, 0.22) * (rays * uFx.x);
+  // 9. Layer 3 (P8.3): God rays — uRay.x wide shafts from the sun anchor.
+  //    Fan of constant-bound beams, one noise tap breaks the edges, depth
+  //    attenuation exp(-uRay.z * depth), gated by uFx.x, clipped by under.
+  float rayStrength = uFx.x;
+  vec3 rayTint = mix(uSky, vec3(1.0), 0.8);
+  float rayLum = 0.0;
+  if (rayStrength > 0.001) {
+    vec2 sunUV = vec2(uSun.x * uAspect, sunAnchorY);
+    vec2 pUV = vec2(vUv.x * uAspect, vUv.y);
+    vec2 toSun = sunUV - pUV;
+    vec2 toSunN = toSun / max(0.001, length(toSun));
+
+    // One tap breaks the shaft edge (the only enemy of banding here).
+    float edgeNoise = noise(vec2(vUv.x * 3.5 + t * 0.08, vUv.y * 2.0));
+
+    float rayAcc = 0.0;
+    for (int i = 0; i < 7; i++) {
+      if (float(i) >= uRay.x) break;
+      float fi = float(i);
+
+      // Fan around the sun direction in fixed 0.08 rad steps.
+      float angleOff = (fi - 3.0) * 0.08;
+      float sa = sin(angleOff), ca = cos(angleOff);
+      vec2 shaftDir = vec2(ca * toSunN.x - sa * toSunN.y,
+                           sa * toSunN.x + ca * toSunN.y);
+
+      // Distance from the pixel to this shaft, measured from the sun downward.
+      float along = dot(pUV - sunUV, -shaftDir);
+      vec2 proj = sunUV + (-shaftDir) * max(0.0, along);
+      float perp = length(pUV - proj);
+
+      float shaftPhase = fi * 1.618 + t * 0.3;
+      float w = uRay.y * (0.7 + 0.3 * sin(shaftPhase));
+      float profile = exp(-(perp * perp) / (w * w));
+      float flickerCoord = along * 1.5 + fi * 2.3 + edgeNoise * 1.5;
+      float flicker = 0.65 + 0.35 * sin(flickerCoord * 3.0 + t * 0.5);
+      rayAcc += profile * flicker * step(0.0, along);
+    }
+
+    float depthAtten = exp(-uRay.z * depth);
+    rayLum = clamp(rayAcc, 0.0, 1.0) * depthAtten * uRay.w * rayStrength * under;
+    water += rayTint * rayLum;
+  }
+  if (uDebug == 14) {
+    gl_FragColor = vec4(rayTint * clamp(rayLum, 0.0, 1.0), 1.0);
+    return;
   }
 
   // Layer 4: Marine snow - hash-grid particles, 2 parallax layers drifting up, count uFx.z * T.snowMax (20)
@@ -254,7 +366,8 @@ void main() {
   // Layer 5: Abyss glow - soft pulsing points, count uFx.w * T.glowMax (8), cool #35e0c2
   if (uFx.w > 0.001) {
     float glowCount = uFx.w * 8.0;
-    float glowWander = (noise(uv * 1.5 + vec2(t * 0.05, 0.0)) - 0.5) * 0.02;
+    // Sine wander, not noise: saves the tap and keeps the motion slow.
+    float glowWander = sin(t * 0.05 + uv.y * 4.0) * 0.02;
     float glowAcc = 0.0;
     for (int i = 0; i < 8; i++) {
       if (float(i) >= glowCount) break;
@@ -279,7 +392,8 @@ void main() {
   // Layer 6: Plunge bubbles - <= 24 bubbles, analytic from hash(float(i)), driven by uPlunge
   if (uPlunge >= 0.0) {
     float lifeFade = smoothstep(0.0, 0.15, uPlunge) * (1.0 - smoothstep(2.0, 3.0, uPlunge));
-    float bubbleTurb = (noise(uv * 4.0 + vec2(0.0, -t * 0.2)) - 0.5) * 0.006;
+    // Reuses the flow sample: same wobble character, 0 extra taps.
+    float bubbleTurb = (nf - 0.47) * 0.012;
     float bubbleAcc = 0.0;
     for (int i = 0; i < 24; i++) {
       if (float(i) >= 24.0) break;
