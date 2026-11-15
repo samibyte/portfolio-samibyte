@@ -55,22 +55,7 @@ test.describe("P8 Look: Composition & Evidence", () => {
       let frameSum = 0;
       let frameCount = 0;
 
-      for (let x = xStart; x <= xEnd; x += 30) {
-      let maxStep = 0;
-      let boundaryRow = -1;
-      for (let y = 0; y < img.height - 1; y++) {
-        const l1 = relativeLuma(img.at(x, y));
-        const l2 = relativeLuma(img.at(x, y + 1));
-        const step = Math.abs(l2 - l1);
-        if (step > maxStep) {
-          maxStep = step;
-          boundaryRow = y;
-        }
-      }
-      console.log(`x=${x}: boundaryRow=${boundaryRow} (${(boundaryRow / img.height).toFixed(3)}), maxStep=${maxStep.toFixed(4)}`);
-    }
-
-    for (let x = xStart; x <= xEnd; x++) {
+      for (let x = xStart; x <= xEnd; x++) {
         let maxStep = 0;
         let boundaryRow = -1;
 
