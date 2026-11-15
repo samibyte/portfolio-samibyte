@@ -1,108 +1,46 @@
-# SETUP GUIDE — running this build with free models
+# SETUP GUIDE — owner operations
 
-The design principle: **state lives in files, not in chat.** `PROGRESS.md`, `DECISIONS.md` and git hold everything. Any model can pick up where another stopped, so you can switch models between tasks — and you should.
+The design principle: **state lives in files, not in chat.** Any model can pick up where another stopped, so you can switch models between tasks.
 
-Written for a pipeline where 3–6 different models touch the repo over the build.
+This file is for the owner. Agents read `AGENTS.md`, one phase preamble, one task section, and at most one skill. The old bootstrap recipe for P0 is in git history; it is not needed again.
 
----
+## Where state lives
 
-## 1. What is in the kit
-
-| File | Purpose | Read when |
+| File | Purpose | Read by |
 |---|---|---|
-| `AGENTS.md` | Entry point: read order, loop, non-negotiables, blocker protocol | Every session, first |
-| `PROGRESS.md` | Machine-readable task list. First unchecked line = the only task | Every session |
-| `phases/P0–P7.md` | Task detail, one section per task ID | One section per session |
-| `SPEC.md` | Constraints, versions, architecture, zones, shader, tuning, gotchas | Only when a task names a section |
-| `CONTENT.md` | Verified copy + `[USER]` slots | P1.4, P1.5, P7.1 |
-| `DECISIONS.md` | Append-only decision log. Prevents re-litigating | When deciding |
-| `skills/*/SKILL.md` | Task runner, shader, contrast, QA gate | When a task names one |
-| `scripts/gate.sh` | typegen → tsc → eslint → build → c5-grep → contrast → content. Fail-fast | After every task |
-| `scripts/next-task.sh` | Prints the task, its phase file and its file list | Every session, first command |
-| `scripts/check-c5.sh` | Bans scroll-hijack / second animation libraries (imports) | Gate + P6.6 |
-| `scripts/contrast.ts` | WCAG 2.2 AA check for all five zones | Gate + P3.1 |
-| `scripts/check-content.ts` | Blocks unresolved `[USER]` slots | Gate + P7.1 |
-| `CLAUDE.md`, `.github/copilot-instructions.md`, `.cursor/rules/ocean.mdc` | One-line pointers to `AGENTS.md` | Automatically |
+| `AGENTS.md` | Entry point: read order, loop, non-negotiables, evidence, blockers | Every agent, first |
+| `PROGRESS.md` | Live task index. First unchecked line = the only task | `next-task.sh` only |
+| `docs/PROGRESS-archive.md` | Completed P0–P6 rows | Nobody, unless auditing |
+| `phases/P8.md`, `phases/P7.md` | Phase preamble (binding) + one section per task | One phase per session |
+| `SPEC.md` | Locked constraints §1, stack, architecture, zones, shader, tuning | Only sections a task names |
+| `CONTENT.md` | Verified copy + `[USER]` slots | P7.1 only |
+| `DECISIONS.md` | Append-only decision log | `grep`, never whole |
+| `qa/sessions.md` | One line per session | Owner |
+| `qa/REPORT.md` | A/U evidence, U items stay `OPEN` | P7.4, P8.7 |
+| `skills/*/SKILL.md` | Shader mechanics, a11y/contrast, QA gate | When the task or file path triggers one |
 
-A session reads about **2 KB** of instructions (`AGENTS.md` + one task + one skill), not the whole plan. That is the point: `AGENT_PLAN.md` alone used to be 22 KB, which is most of a small model's usable context before any code.
+Tool wiring is already in place: `AGENTS.md` (automatic for most tools), `CLAUDE.md`, `.cursor/rules/ocean.mdc`, `.github/copilot-instructions.md`. The skills in `skills/` are plain files read by path — they are **not** registered in `.opencode/` or `.claude/`. If your tool wants a skills folder, copy or link them; do not maintain a second copy.
 
----
-
-## 2. One-time setup (~5 minutes)
-
-**Step 1 — scaffold in a temp dir, then copy in.** Do it yourself; interactive prompts are where agents get stuck. `create-next-app` refuses this repo because the kit's own files are not on its allowlist, so scaffold elsewhere and copy the generated project in:
-
-```bash
-cd ~/samibyte-portfolio          # the repo that already contains this kit
-rm -rf /tmp/scaffold && mkdir -p /tmp/scaffold
-npx create-next-app@latest /tmp/scaffold --ts --tailwind --eslint --app --no-src-dir \
-  --import-alias "@/*" --use-npm --no-cache-components --no-agents-md \
-  --no-react-compiler --no-agent-feedback --disable-git --yes
-(cd /tmp/scaffold && tar --exclude=.git --exclude=README.md --exclude=node_modules --exclude=.next -cf - .) \
-  | tar -xf - -C .
-npm ci
-```
-
-Four flags are load-bearing:
-
-- `--no-agents-md` — the default Next 16 template writes its own `AGENTS.md` and **would overwrite this kit's entry point**.
-- `--no-cache-components` — keeps Next 16 caching semantics simple enough for a small model to reason about.
-- `--no-react-compiler` — `--yes` otherwise reuses saved preferences and installs `babel-plugin-react-compiler`; this build does not use it.
-- `--disable-git` — git is task P0.4, after the gate exists.
-
-The `tar` step excludes the template `README.md` so the kit's stays. Never pass a project name that creates a nested folder (`/tmp/scaffold/ocean-portfolio`) — every path in `SPEC.md` would break. Check afterwards that `AGENTS.md`, `README.md` and `SPEC.md` are untouched (`git status` once P0.4 exists).
-
-**Step 2 — make the scripts runnable and check the wiring.**
-
-```bash
-chmod +x scripts/gate.sh scripts/next-task.sh scripts/check-c5.sh
-bash scripts/next-task.sh
-```
-
-It should print `TASK P0.1 … FILES …`. If it prints `DETAIL MISSING`, the kit is corrupted — stop and re-copy it instead of editing around it.
-
-**Step 3 — wire your tool.** `AGENTS.md` is the de-facto standard and most tools read it automatically. Confirm against each tool's current docs, because these paths change.
-
-| Tool | Instruction file | Skills |
-|---|---|---|
-| OpenCode / Codex / most 2026 agents | `AGENTS.md` (root, automatic) | `.opencode/skill/<name>/SKILL.md` or the tool's documented folder |
-| Claude Code | `CLAUDE.md` (included) | copy `skills/` to `.claude/skills/` |
-| Cursor | `.cursor/rules/ocean.mdc` (included) | reference `skills/` from the rule |
-| VS Code Copilot | `.github/copilot-instructions.md` (included) | reference `skills/` from `AGENTS.md` |
-
-**Step 4 — test the wiring.** New chat, first message:
-
-> Run `bash scripts/next-task.sh` and paste the output. Then list the files you would touch. Do not edit anything.
-
-If it names the right task, its file list is plausible, and it has not touched the repo: good. If it invents a task, your tool is not reading `AGENTS.md`.
-
----
-
-## 3. The session loop
-
-One task per session. New chat every time — long chats degrade small models faster than they help.
-
-**Kickoff prompt:**
-
-```
-Follow AGENTS.md. Run bash scripts/next-task.sh, then do that one task.
-Run npm run gate before ticking the box. Stop after one task.
-```
-
-**After each session (2 minutes, you are the QA gate):**
+## After each agent session (2 minutes)
 
 ```bash
 git log --oneline -3        # one commit, named P<n>.<m>
 git show --stat HEAD        # only the files the task listed?
 npm run gate                # PASS yourself; do not trust the report
-npm run dev                 # look at it
+npx playwright test         # the task's checks, if it named any
 ```
 
-Compare the diff to the task's `Files:`. A commit that touches files outside the task is the most common early-warning sign of a model going off-plan. Revert it with `git restore --staged --worktree .` and retry with a smaller task.
+Compare the diff to the task's `Files:`. A commit that touches files outside the task is the most common early-warning sign of a model going off-plan. Revert it and retry with a smaller task.
 
----
+## Prompts
 
-## 4. Extra prompts
+**Kickoff:**
+
+```
+Follow AGENTS.md. Run bash scripts/next-task.sh, read the phase preamble it
+prints, then do that one task. Run the task's Done checks and npm run gate
+before ticking the box. Stop after one task.
+```
 
 **Recovery** (stuck, looping, or claiming success without output):
 
@@ -112,13 +50,7 @@ Then make the smallest fix and rerun npm run gate.
 If it fails a third time on the same error, write it under Blockers in PROGRESS.md and stop.
 ```
 
-**Plan first** (use for P2.4, P2.5, P3.2–P3.5, P6.2):
-
-```
-Before editing, list the files and the ordered steps. Wait for my OK. Change nothing yet.
-```
-
-**Cross-model review** (read-only, run with a *different* model than the one that wrote the commit — this catches more than any prompt tweak):
+**Cross-model review** (read-only, with a different model than the one that wrote the commit):
 
 ```
 Review git show HEAD against SPEC.md §1 (C1–C8) and AGENTS.md.
@@ -126,54 +58,29 @@ List violations only, as file:line, and say which constraint.
 Do not edit. If you find nothing, say "no violations" — do not invent issues.
 ```
 
-**Handoff** (when a session must end early):
+**Handoff** (session must end early):
 
 ```
 Do not commit a half-done task. Revert to HEAD, then write into PROGRESS.md
 Blockers: what is done, what is not, the exact next command. Then stop.
 ```
 
----
-
-## 5. Which model for which task
-
-Free models differ much more in instruction-following than in raw coding. Route by failure cost.
+## Model routing for what is left
 
 | Tasks | Model quality | Why |
 |---|---|---|
-| P0, P1, P5 (mostly), P7.2 | any capable model | transcription and layout; the gate catches errors |
-| P2.1–P2.3 | mid | the loop and layout cache are hard to retrofit |
-| **P2.4, P2.5, P3.2–P3.5** | **strongest available** | GLSL and WebGL lifecycle; a weak model will burn 10 sessions here |
-| P4.1, P6.1, P6.2 | strong | pure functions with unit tests — cheap to verify, expensive to get subtly wrong |
-| P1.4, P1.5, P7.1 | human-assisted | facts and judgement; never let a model "fill in" a slot |
-| P7.3, P7.4 | human | accounts, deploy, and the **U** report |
+| P8.0–P8.1, P8.7, P7.2 | any capable model | harness, tokens, evidence, metadata |
+| **P8.2–P8.6** | **strongest available** | GLSL, the waterline mask, the 11-tap budget, tier cuts — a weak model burns sessions here |
+| P7.1 | human-assisted | facts and judgement; never let a model fill a slot |
+| P7.3, P7.4 | human | accounts, deploy, the **U** report |
 
-If the strongest model is rate-limited, spend it on P2.5. The shader is the only part where a wrong answer still *looks* finished.
+If the strongest model is rate-limited, spend it on P8.2 and P8.3.
 
----
+## Known gaps — check before launch
 
-## 6. What actually fails with free models, and the countermeasure
-
-| Failure | Countermeasure already in the kit |
-|---|---|
-| Does 4 tasks in one session | `next-task.sh` prints one task; the kickoff prompt says stop; `git show --stat` is your check |
-| Edits files outside the task | `Files:` on every task; commit review |
-| Marks checks passed without running them | **A**/**U** split; gate output is the only accepted evidence |
-| Describes a screenshot as proof | Explicitly forbidden; pixel helpers in `tests/helpers/pixels.ts` |
-| Invents a metric to fill a gap | `[USER: …]` slot + `check-content.ts --strict` at P7 |
-| Disables a test to get green | "Never weaken a check" in `AGENTS.md` + the recovery prompt |
-| Re-reads the whole plan every turn | phase-split docs; 2 KB read budget |
-| Drifts from the plan in a long chat | one task per chat, new chat each time |
-| Loses the plot after a rate-limit restart | all state in `PROGRESS.md` + git |
-| Re-litigates an old choice | `DECISIONS.md` is append-only |
-
----
-
-## 7. Known gaps — check before launch
-
-- `CONTENT.md` `[USER]` slots: final domain, resume hosting, per-project `role`/`architecture`/`decision`, and the skills the owner may not want to defend. P7.1 cannot be done by a model.
-- Contact form rate limiting is in-memory and best-effort (D-014). It is not a real limiter on serverless. Acceptable for a portfolio; do not describe it as otherwise.
-- `ogl` last published 2025-01; it is stable and pinned. Do not "upgrade" it.
-- Lighthouse needs Chrome and Node ≥ 22.19. It is **not** part of `npm run gate` for that reason (D-126).
+- `CONTENT.md` still has 5 `[USER]` slots (domain, resume URL, per-project architecture, stack items to drop). P7.1 cannot be done by a model.
+- Contact rate limiting is in-memory and best-effort (D-014). Not a real limiter on serverless; do not describe it as one.
+- Lighthouse needs Chrome and Node ≥ 22.19. It is advisory and never part of `npm run gate` (D-194).
 - `next/font/google` downloads at build time. On an offline build host, fall back to the system stack and log it.
-- The **U** rows in `qa/REPORT.md` are the only thing standing between "the tests pass" and "it is actually good". Budget an hour for them.
+- The **U** rows in `qa/REPORT.md` are the only thing between "the tests pass" and "it is actually good". Budget an hour for them.
+- P8 changes the palette and the shader mask semantics. `SPEC.md` §5/§6/§7 still describe the pre-P8 ocean until the owner updates them after P8.1; D-195 records that the P8 phase wins meanwhile.

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Prints the one task you are allowed to do this session.
 # Reads the first unchecked line in PROGRESS.md: `- [ ] <ID> <title>`
-# Then verifies the matching detail heading exists in phases/P<n>.md.
+# Verifies the matching detail heading exists in phases/P<n>.md, prints the exact
+# lines to read (phase preamble + task section) and any non-empty Blockers.
 set -uo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
@@ -10,7 +11,7 @@ line=$(grep -m1 -E '^- \[ \] P[0-9]+\.[0-9]+[a-z]? ' PROGRESS.md || true)
 
 if [ -z "$line" ]; then
   echo "ALL TASKS TICKED."
-  echo "If PHASE 7 is complete, write qa/REPORT.md and stop. Do not invent work."
+  echo "If the final phase is complete, update qa/REPORT.md and stop. Do not invent work."
   exit 0
 fi
 
@@ -28,10 +29,20 @@ if [ ! -f "$file" ]; then
   exit 2
 fi
 
-if ! grep -qE "^#+ ${task}[[:space:]]" "$file"; then
+start=$(grep -nE "^#+ ${task}[[:space:]]" "$file" | head -1 | cut -d: -f1)
+if [ -z "${start:-}" ]; then
   echo "DETAIL MISSING — no '${task} ' heading in $file. Stop and report under Blockers."
   exit 2
 fi
+
+# Preamble = everything before the first task heading; task section ends before the next one.
+first_task=$(grep -nE '^#+ P[0-9]+\.[0-9]+[a-z]?[[:space:]]' "$file" | head -1 | cut -d: -f1)
+end=$(awk -v s="$start" '
+  NR > s && /^#+ P[0-9]+\.[0-9]+[a-z]?[[:space:]]/ { print NR - 1; exit }
+' "$file")
+[ -z "$end" ] && end=$(wc -l < "$file")
+
+echo "READ   $file lines 1-$((first_task - 1)) (preamble) + $start-$end (task)"
 
 files=$(awk -v id="$task" '
   $0 ~ "^#+ " id "[[:space:]]" { found = 1; next }
@@ -40,8 +51,21 @@ files=$(awk -v id="$task" '
 
 [ -n "$files" ] && echo "FILES  $files"
 
+blockers=$(awk '
+  /^## Blockers/ { found = 1; next }
+  found && /^## / { exit }
+  found { print }
+' PROGRESS.md | sed '/^[[:space:]]*$/d')
+if [ -n "$blockers" ] && [ "$blockers" != "None." ]; then
+  echo
+  echo "BLOCKERS"
+  printf '%s\n' "$blockers"
+fi
+
 cat <<'EOT'
 
-RULES  1 task. Smallest diff. npm run gate must print GATE: PASS.
-        Then: tick the box, one DECISIONS row if non-obvious, commit "P<n>.<m> <name>". Stop.
+RULES  Read the preamble + task section. 1 task. Smallest diff.
+       Run the task's Done checks, not only npm run gate. Paste the counts.
+       Then: tick the box, one line in qa/sessions.md, one DECISIONS row if
+       non-obvious, commit "P<n>.<m> <name>". Stop.
 EOT

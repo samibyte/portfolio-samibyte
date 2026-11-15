@@ -1,6 +1,6 @@
 ---
 name: ocean-qa-gate
-description: Use before closing a phase and for all P6–P7 work. Runs the full gate, captures screenshots, and writes qa/REPORT.md with one evidence row per locked constraint, separating agent-provable A checks from owner-only U checks.
+description: Use before closing a task or phase, and for all P7–P8 evidence work. Runs the static gate and the task's Playwright checks, captures screenshots, and writes qa/REPORT.md with one evidence row per locked constraint, separating agent-provable A checks from owner-only U checks.
 ---
 
 # Ocean QA Gate
@@ -18,11 +18,20 @@ You may write `PASS` for **A** only. Every **U** row goes into `qa/REPORT.md` as
 
 ## Procedure
 
-1. **Static gate.** `npm run gate`. Every step prints `PASS`.
-2. **Screenshots.** `npx playwright test tests/shots.spec.ts` → `qa/screens/` at scroll 0/50/100%, desktop and mobile. Screenshots are **owner evidence**, not agent evidence. Do not describe them.
-3. **Assertions.** Run `npx playwright test`. C1, C2, C3, C4, C5, C6, C7 must pass. A skipped test counts as a failure.
-4. **Lighthouse (P6+).** `npm run lh` on `?fx=off` URLs. Record the numbers. If Chrome is unavailable, write `BLOCKED (no Chrome)` — do not remove the step from the gate, it was never in the gate.
-5. **Report.** Rewrite `qa/REPORT.md`:
+1. **Task checks.** Run the commands the task's **Done** names, usually one of:
+   ```bash
+   npx playwright test tests/c1.spec.ts tests/c2.spec.ts
+   npx playwright test tests/c4.spec.ts
+   npx playwright test tests/look.spec.ts
+   npm run shot            # 8 PNGs → qa/screens/ (gitignored)
+   ```
+   Paste the pass/skip counts. A green static gate is not a green task.
+2. **Static gate.** `npm run gate`. Every step prints `PASS`.
+3. **Phase exit.** `npx playwright test` (c1–c7 + look + shots). The phase file lists the exact specs and screenshots it requires.
+   - **Skips:** a skip that the phase or the test declares for a project (e.g. c7 on mobile) is expected — report it as `N skipped`. An **unexpected** skip is a failure. A skip never counts as a pass.
+4. **Screenshots.** `npm run shot` → `qa/screens/`. Screenshots are **owner evidence**, not agent evidence. Do not describe them.
+5. **Lighthouse (P7 only).** `npm run lh` on `?fx=off` URLs. Advisory (D-194), never part of `npm run gate`. If Chrome is unavailable, write `BLOCKED (no Chrome)`; do not remove the step.
+6. **Report.** Rewrite `qa/REPORT.md`:
 
 ```md
 # QA report — <date> — commit <sha>
@@ -31,6 +40,10 @@ You may write `PASS` for **A** only. Every **U** row goes into `qa/REPORT.md` as
 |----|-----------|----------|--------|
 | C1 | 70/30 hero | tests/c1.spec.ts (boundary 29.8%) | PASS |
 | C7 | 60 fps | — | **U** OPEN |
+| C8 | No invented fact | content --strict: 0 slots | PASS |
+
+## Playwright
+| Spec | Passed | Skipped | Result |
 
 ## Lighthouse (`?fx=off`)
 | URL | Perf | A11y | BP | SEO |
@@ -38,6 +51,7 @@ You may write `PASS` for **A** only. Every **U** row goes into `qa/REPORT.md` as
 ## Owner items (U)
 - [ ] 60 fps on your laptop, 4× CPU throttle holds ≥ 30 fps
 - [ ] Real phone, mid-range, scroll the whole page
+- [ ] Visual review of qa/screens/ (P8 beauty/realism)
 - [ ] Confirm every `[USER]` in CONTENT.md
 
 ## Open items
@@ -49,5 +63,5 @@ You may write `PASS` for **A** only. Every **U** row goes into `qa/REPORT.md` as
 - Missing file = `FAIL`, not "skipped".
 - Borderline = `NEEDS REVIEW`. Say so; do not round up.
 - Never edit a constraint, a threshold or a test to make a row pass.
-- Never commit scratch screenshots. Only `qa/screens/` and `qa/REPORT.md`.
+- Never commit screenshots or `qa/gate.log`; both are gitignored. Only `qa/REPORT.md`, `qa/sessions.md` and the `qa/lh/` reports are committed.
 - If two constraints conflict, stop and report — that is a spec bug, and `SPEC.md` §1 wins until the owner changes it.

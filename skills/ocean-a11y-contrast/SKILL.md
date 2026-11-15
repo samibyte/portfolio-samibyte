@@ -18,26 +18,21 @@ Target: **WCAG 2.2 level AA**. (2.2 replaced 2.1 in 2023; audits and the Europea
 
 Test every text colour against **both** `bgTop` and `bgBot`. A pass on one stop does not count. The in-between value is not tested separately because sRGB interpolation is monotonic per channel, so the stops bound the middle.
 
-## Measured palette — do not re-derive
+## Colour rules
 
-| Zone | text | on bgTop | on bgBot | +0.06 lift |
-|---|---|---|---|---|
-| surface | `#0a1628` | 10.41 | 9.28 | n/a (dark text) |
-| sunlight | `#0a1628` | 9.28 | 5.75 | n/a |
-| twilight | `#e0e8f0` | 9.41 | 13.28 | 5.65 |
-| midnight | `#c0d0e0` | 11.52 | 12.36 | 5.66 |
-| abyss | `#b4c2d0` | 10.72 | 11.30 | 5.08 |
-
-The `+0.06` column is the worst case after the shader's permitted luminance lift. `abyss` passes only because its text is `#b4c2d0` — `#a0b0c0` drops to 4.15:1 and fails (D-102). Do not change palette values without running `npx tsx scripts/contrast.ts`.
-
-## Rules
-
-- **Surface and sunlight use dark text.** White measures 1.74:1 and 1.95:1 there.
-- **Accent is decorative only.** `twilight.accent` measures 1.86:1. Never use accent for text, a link, a border that carries meaning, or a focus ring.
-- **Focus ring:** `outline: 2px solid var(--text); outline-offset: 2px`. `--text` clears 3:1 in every zone (D-127).
+- **The script is the arbiter.** `npx tsx scripts/contrast.ts` prints every ratio. Never copy ratios from a doc, a phase file or a previous report — they change with the palette (P8.1 retunes four of five zones). Paste the current output when you claim a pass.
+- **Surface and sunlight use dark text** (`#0a1628`). White measures below 2:1 there. The P8 rule is stronger and easier to check: every dark-text zone needs
+  `min(relLuma(bgTop), relLuma(bgBot)) ≥ 0.21`, because the hero text straddles the waterline.
+- **Abyss is frozen** (`#050d1a → #020408`, text `#b4c2d0`, accent `#ff9f43`). Do not retune it; the OG image depends on it.
+- **Accent is decorative only.** Never use accent for text, a link, a border that carries meaning, or a focus ring. It is not contrast-checked.
+- **Focus ring:** `outline: 2px solid var(--text); outline-offset: 2px`. `--text` clears 3:1 in every zone.
 - **Focus must not be hidden** behind the sticky bar or an overlay (SC 2.4.11). If a sticky element can cover a focused target, add `scroll-margin-top`.
 - **Body copy over a busy area** goes on a panel: `background: rgb(5 13 26 / 0.85)`. Never `backdrop-filter: blur()` behind text — it blurs the text.
-- **Reduced motion** is a real state, not a faster animation: time frozen, springs at 0, no bob, no ping, no torch. Respect `prefers-reduced-motion` **and** the on-page toggle.
+- **Additive light is capped.** In light-text zones the shader may lift background luminance by at most **0.06**; where the local background luma is < 0.2, total additive lift ≤ 0.06. New layers are not exempt.
+
+## Interaction and motion
+
+- **Reduced motion** is a real state, not a faster animation: time frozen, springs at 0, no bob, no ping, no torch, no fauna drift. Respect `prefers-reduced-motion` **and** the on-page toggle.
 - **Mobile is not reduced motion.** Do not conflate them (D-012).
 - **Labels and errors.** Real `<label htmlFor>`, errors linked by `aria-describedby`, `aria-invalid`, and a `role="status"` for the submit result.
 - **Images** get `alt`; purely decorative ones get `alt=""`.
@@ -47,7 +42,7 @@ The `+0.06` column is the worst case after the shader's permitted luminance lift
 ## Checks
 
 ```bash
-npx tsx scripts/contrast.ts         # palette + focus + effect lift
+npx tsx scripts/contrast.ts          # palette + focus + effect lift
 npx playwright test tests/c4.spec.ts # rendered pixels, per zone, per scroll step
 npm run gate                         # includes contrast
 ```
