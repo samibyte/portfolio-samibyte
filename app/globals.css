@@ -332,3 +332,204 @@ body:not(:has(canvas:not(.fluid-glass__canvas))) [data-zone="surface"] {
     transition: none;
   }
 }
+
+/* ── Floating dock: vertical left rail ─────────────────────────────────────
+ * The dock is compact and centered vertically on the left edge.
+ * On hover or keyboard focus, it smoothly grows longer.
+ * Motion is CSS-only (compositor transitions), respects prefers-reduced-motion.
+ */
+.dock {
+  position: fixed;
+  left: 1rem;
+  top: 50%;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  width: 3.25rem;
+  padding: 0.625rem 0.125rem;
+  transform: translateY(-50%);
+  user-select: none;
+  transition:
+    padding 400ms cubic-bezier(0.22, 1, 0.36, 1),
+    gap 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (min-width: 768px) {
+  .dock {
+    left: 1.25rem;
+    width: 3.5rem;
+    padding-inline: 0.25rem;
+  }
+}
+
+.dock:hover,
+.dock:focus-within {
+  padding: 1.25rem 0.25rem;
+  gap: 0.75rem;
+}
+
+.dock__list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  transition: gap 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dock:hover .dock__list,
+.dock:focus-within .dock__list {
+  gap: 0.5rem;
+}
+
+.dock__item {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.dock__link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  color: #e0e8f0;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.dock__link:hover,
+.dock__link:focus-visible {
+  color: #fff;
+  background: rgb(224 232 240 / 0.12);
+}
+
+.dock__link:focus-visible {
+  outline: 2px solid #e0e8f0;
+  outline-offset: 2px;
+}
+
+.dock__link[data-active="true"] {
+  background: rgb(224 232 240 / 0.14);
+  color: #fff;
+}
+
+.dock__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.dock__tip {
+  position: absolute;
+  left: calc(100% + 0.625rem);
+  top: 50%;
+  z-index: 30;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid rgb(224 232 240 / 0.2);
+  border-radius: 0.375rem;
+  background: rgb(5 13 26 / 0.95);
+  color: #e0e8f0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-4px, -50%);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.dock__link:hover .dock__tip,
+.dock__link:focus-visible .dock__tip,
+.group\/toggle:hover .dock__tip,
+.group\/toggle:focus-within .dock__tip {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+.dock__extra {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  width: 100%;
+  margin-top: 0.125rem;
+  padding-top: 0.375rem;
+  border-top: 1px solid rgb(224 232 240 / 0.1);
+  transition:
+    gap 400ms cubic-bezier(0.22, 1, 0.36, 1),
+    padding 400ms cubic-bezier(0.22, 1, 0.36, 1),
+    margin 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dock:hover .dock__extra,
+.dock:focus-within .dock__extra {
+  gap: 0.625rem;
+  margin-top: 0.25rem;
+  padding-top: 0.5rem;
+}
+
+.dock__toggle {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding-top: 0.25rem;
+}
+
+.dock__gauge {
+  position: relative;
+  width: 1px;
+  height: 1.75rem;
+  background: rgb(224 232 240 / 0.25);
+  transition: height 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dock:hover .dock__gauge,
+.dock:focus-within .dock__gauge {
+  height: 3.5rem;
+}
+
+@media (max-height: 640px) {
+  .dock {
+    gap: 0.25rem;
+    padding: 0.5rem 0.125rem;
+  }
+
+  .dock:hover,
+  .dock:focus-within {
+    padding: 0.75rem 0.25rem;
+    gap: 0.375rem;
+  }
+
+  .dock__link {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock,
+  .dock__list,
+  .dock__extra,
+  .dock__gauge {
+    transition: none !important;
+  }
+}

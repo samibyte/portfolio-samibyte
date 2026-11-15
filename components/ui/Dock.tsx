@@ -3,16 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import type { ReactNode } from "react";
 import { content } from "@/lib/content";
 import { glass } from "@/lib/glass";
 import { ZONES, metersAt } from "@/lib/zones";
 import { measure, sections } from "@/lib/layout";
 import type { ZoneId } from "@/lib/types";
 import { EffectsToggle } from "@/components/ui/EffectsToggle";
-
-const TEXT = "text-[#e0e8f0]";
-const FOCUS =
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e0e8f0]";
 
 const STORAGE_KEY = "ocean-fx";
 
@@ -97,7 +94,7 @@ interface NavItem {
   label: string;
   href: string;
   external?: boolean;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -214,6 +211,7 @@ export function Dock() {
   const [activeIdx, setActiveIdx] = useState<number>(isCaseStudy ? 1 : 0);
 
   const activeZoneRef = useRef<ZoneId>("surface");
+  const activeIdxRef = useRef<number>(isCaseStudy ? 1 : 0);
   const metersRef = useRef<HTMLSpanElement | null>(null);
   const markerRef = useRef<HTMLDivElement | null>(null);
 
@@ -228,6 +226,12 @@ export function Dock() {
 
     let lastMeters = -1;
     let lastMarker = -1;
+
+    const setActive = (next: number) => {
+      if (next === activeIdxRef.current) return;
+      activeIdxRef.current = next;
+      setActiveIdx(next);
+    };
 
     const update = () => {
       const scrollY = window.scrollY || window.pageYOffset || 0;
@@ -259,11 +263,9 @@ export function Dock() {
       }
 
       if (isHome) {
-        if (scrollY < 100) {
-          setActiveIdx(0);
-        } else {
-          setActiveIdx(sectionIndexAt(midY));
-        }
+        setActive(scrollY < 100 ? 0 : sectionIndexAt(midY));
+      } else if (isCaseStudy) {
+        setActive(1);
       }
     };
 
@@ -275,12 +277,23 @@ export function Dock() {
       window.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
     };
-  }, [isHome]);
+  }, [isHome, isCaseStudy]);
 
   const currentZone = ZONES.find((zone) => zone.id === zoneId) || ZONES[0];
 
-  const indicatorOffset =
-    activeIdx === 0 ? 0 : 44 + 8 + (activeIdx - 1) * 48;
+  const allItems = [
+    {
+      label: content.name,
+      href: "/",
+      isHome: true,
+      icon: (
+        <span className="font-[family-name:var(--font-display)] text-base font-bold tracking-tight">
+          SA
+        </span>
+      ),
+    },
+    ...NAV_ITEMS,
+  ];
 
   return (
     <>
@@ -291,117 +304,98 @@ export function Dock() {
 
       <nav
         aria-label="Main"
-        className={glass({
-          variant: "panel",
-          tone: "chrome",
-          className:
-            "fixed left-4 top-4 bottom-4 z-20 flex flex-col justify-between items-center w-[3.5rem] md:w-[4.5rem] py-3 px-1.5 md:px-2.5 select-none",
-        })}
+        className={[glass({ variant: "panel", tone: "chrome" }), "dock"]
+          .filter(Boolean)
+          .join(" ")}
       >
-        {/* Top: Home + Nav Links */}
-        <div className="w-full flex flex-col items-center">
-          <div className="relative w-full flex flex-col items-center">
-            {/* Sliding Active Indicator */}
-            <div
-              aria-hidden="true"
-              className="absolute left-0 top-0 w-1 rounded-r bg-[#e0e8f0] pointer-events-none"
-              style={{
-                height: "44px",
-                transform: `translateY(${indicatorOffset}px)`,
-                transition: reduced
-                  ? "none"
-                  : "transform 300ms cubic-bezier(0.22, 1, 0.36, 1)",
-              }}
-            />
+        {/* Navigation links */}
+        <ul className="dock__list">
+          {allItems.map((item, idx) => {
+            const isHomeItem = "isHome" in item && item.isHome;
+            const isProjects = item.label === "Projects";
+            const isCurrent = isHomeItem
+              ? isHome
+                ? "page"
+                : undefined
+              : isProjects && isCaseStudy
+                ? "page"
+                : undefined;
+            const isActive = activeIdx === idx;
 
-            {/* Home / Identity Link */}
-            <div className="relative group/item w-full flex justify-center">
-              <Link
-                href="/"
-                aria-current={isHome ? "page" : undefined}
-                aria-label={content.name}
-                className={`flex items-center justify-center min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg ${TEXT} hover:text-white ${FOCUS} transition-colors`}
-              >
-                <span className="font-[family-name:var(--font-display)] text-base font-bold tracking-tight">
-                  SA
+            const contentNode = (
+              <>
+                <span className="dock__icon">{item.icon}</span>
+                <span className="dock__tip" aria-hidden="true">
+                  {item.label}
                 </span>
-              </Link>
-              <span className="pointer-events-none absolute left-full ml-3 hidden md:group-hover/item:inline-flex md:group-focus-visible/item:inline-flex items-center px-2.5 py-1 text-xs font-mono tracking-wider uppercase rounded-md bg-[#050d1a]/95 text-[#e0e8f0] border border-[#e0e8f0]/20 shadow-lg whitespace-nowrap z-30">
-                {content.name}
-              </span>
-            </div>
+              </>
+            );
 
-            {/* In-page Links */}
-            <ul className="mt-2 flex flex-col gap-1 w-full items-center">
-              {NAV_ITEMS.map((item, idx) => {
-                const itemIndex = idx + 1;
-                const isProjects = item.label === "Projects";
-                const isCurrent = isProjects && isCaseStudy ? "page" : undefined;
+            return (
+              <li key={item.label} className="dock__item">
+                {"external" in item && item.external ? (
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={item.label}
+                    className="dock__link"
+                  >
+                    {contentNode}
+                  </a>
+                ) : (
+                  <Link
+                    href={item.href}
+                    aria-current={isCurrent}
+                    aria-label={item.label}
+                    data-active={isActive ? "true" : undefined}
+                    onClick={() => {
+                      activeIdxRef.current = idx;
+                      setActiveIdx(idx);
+                    }}
+                    className="dock__link"
+                  >
+                    {contentNode}
+                  </Link>
+                )}
+              </li>
+            );
+          })}
+        </ul>
 
-                return (
-                  <li key={item.label} className="relative group/item w-full flex justify-center">
-                    {item.external ? (
-                      <a
-                        href={item.href}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label={item.label}
-                        className={`flex items-center justify-center min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg ${TEXT} hover:text-white ${FOCUS} transition-colors`}
-                      >
-                        {item.icon}
-                      </a>
-                    ) : (
-                      <Link
-                        href={item.href}
-                        aria-current={isCurrent}
-                        aria-label={item.label}
-                        onClick={() => setActiveIdx(itemIndex)}
-                        className={`flex items-center justify-center min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg ${TEXT} hover:text-white ${FOCUS} transition-colors`}
-                      >
-                        {item.icon}
-                      </Link>
-                    )}
-                    <span className="pointer-events-none absolute left-full ml-3 hidden md:group-hover/item:inline-flex md:group-focus-visible/item:inline-flex items-center px-2.5 py-1 text-xs font-mono tracking-wider uppercase rounded-md bg-[#050d1a]/95 text-[#e0e8f0] border border-[#e0e8f0]/20 shadow-lg whitespace-nowrap z-30">
-                      {item.label}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </div>
-
-        {/* Center / Depth Spine readout (from DiveLine) */}
-        <div
-          data-dive-line
-          aria-hidden="true"
-          className="my-auto py-2 flex flex-col items-center w-full pointer-events-none select-none transition-colors duration-300"
-        >
-          <span className="text-[9px] md:text-[10px] font-mono tracking-[0.25em] uppercase text-[#e0e8f0]/60 [writing-mode:vertical-rl] rotate-180">
-            {currentZone.label}
-          </span>
-          <div className="relative h-14 md:h-18 w-px bg-[#e0e8f0]/20 my-2">
-            <div
-              ref={markerRef}
-              className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#e0e8f0]"
-              style={{ top: "0%" }}
-            />
-          </div>
-          <span
-            ref={metersRef}
-            data-dive-meters
-            className="font-mono text-[10px] md:text-[11px] tabular-nums tracking-wider text-[#e0e8f0]/80"
+        {/* Depth spine + effects toggle */}
+        <div className="dock__extra">
+          <div
+            data-dive-line
+            aria-hidden="true"
+            className="flex flex-col items-center w-full pointer-events-none select-none opacity-60"
           >
-            0 m
-          </span>
-        </div>
+            <span className="text-[8px] font-mono tracking-[0.2em] uppercase text-[#e0e8f0]/60 [writing-mode:vertical-rl] rotate-180 mb-1">
+              {currentZone.label}
+            </span>
+            <div className="dock__gauge">
+              <div
+                ref={markerRef}
+                aria-hidden="true"
+                className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#e0e8f0]"
+                style={{ top: "0%" }}
+              />
+            </div>
+            <span
+              ref={metersRef}
+              data-dive-meters
+              className="mt-1 font-mono text-[9px] tabular-nums tracking-wider text-[#e0e8f0]/80"
+            >
+              0 m
+            </span>
+          </div>
 
-        {/* Footer: EffectsToggle */}
-        <div className="relative group/item w-full flex justify-center pt-2 border-t border-[#e0e8f0]/10">
-          <EffectsToggle />
-          <span className="pointer-events-none absolute left-full ml-3 hidden md:group-hover/item:inline-flex md:group-focus-visible/item:inline-flex items-center px-2.5 py-1 text-xs font-mono tracking-wider uppercase rounded-md bg-[#050d1a]/95 text-[#e0e8f0] border border-[#e0e8f0]/20 shadow-lg whitespace-nowrap z-30">
-            {reduced ? "Static" : "Reduce motion"}
-          </span>
+          <div className="dock__toggle group/toggle">
+            <EffectsToggle />
+            <span className="dock__tip" aria-hidden="true">
+              {reduced ? "Static" : "Reduce motion"}
+            </span>
+          </div>
         </div>
       </nav>
     </>
