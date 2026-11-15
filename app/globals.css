@@ -3,9 +3,9 @@
 :root {
   /* Default palette = surface (SPEC §5). P1.3 overrides these per [data-zone]. */
   --text: #0a1628;
-  --accent: #87ceeb;
-  --bg-top: #87ceeb;
-  --bg-bot: #00ced1;
+  --accent: #f59e0b;
+  --bg-top: #80b8e0;
+  --bg-bot: #35afa7;
   --panel: rgb(5 13 26 / 0.85);
   --ring: var(--text);
 
@@ -82,30 +82,30 @@ summary,
 
 [data-zone="surface"] {
   --text: #0a1628;
-  --accent: #87ceeb;
-  --bg-top: #87ceeb;
-  --bg-bot: #00ced1;
+  --accent: #f59e0b;
+  --bg-top: #80b8e0;
+  --bg-bot: #35afa7;
 }
 
 [data-zone="sunlight"] {
   --text: #0a1628;
-  --accent: #00ced1;
-  --bg-top: #00ced1;
-  --bg-bot: #339fa8;
+  --accent: #2dd4bf;
+  --bg-top: #35afa7;
+  --bg-bot: #2e9e98;
 }
 
 [data-zone="twilight"] {
   --text: #e0e8f0;
   --accent: #2a6496;
-  --bg-top: #1a3a5c;
-  --bg-bot: #0d1f3c;
+  --bg-top: #143854;
+  --bg-bot: #0d2238;
 }
 
 [data-zone="midnight"] {
   --text: #c0d0e0;
   --accent: #1a3a6e;
   --bg-top: #0a1628;
-  --bg-bot: #050d1a;
+  --bg-bot: #060d19;
 }
 
 [data-zone="abyss"] {

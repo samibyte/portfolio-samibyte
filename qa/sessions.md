@@ -54,3 +54,4 @@ One line per session: `date | task | gate | checks | commit | model`. Append onl
 2026-11-14 | P6.7 | GATE: PASS; Lighthouse 13.6.0/Chrome 157, ?fx=off, mobile: / and /projects/stitchlogic 100/100/100/100 (perf/a11y/bp/seo) ≥ thresholds 90/95/95/95 as lhci error assertions; canvas-on informational 100s; qa/lh reports + qa/REPORT.md saved; D-194 | P6.7 Lighthouse | openrouter-free
 2026-11-15 | chore | n/a | agent kit refactor: phase preamble read order, session log → qa/sessions.md, P0–P6 archived, ocean-task-runner deleted, D-195/D-196 | chore: refactor agent kit for P8 | big-pickle
 2026-11-15 | P8.0 | GATE: PASS | c1+c2 6 passed; look 2 passed (desktop 30.213%, mobile 30.405%); shots 2 passed, 8 PNGs; dead scan loop removed from look.spec | P8.0 Evidence harness | big-pickle
+2026-11-15 | P8.1 | GATE: PASS | contrast ok (tightest abyss 5.08); look 8 passed (fallback split 0.1005/0.0999); c1 4 passed; c4 2 passed | P8.1 Palette + tokens + fallback | flash-high

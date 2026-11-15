@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { decode, relativeLuma } from "./helpers/pixels";
+import { decode, relativeLuma, hue, saturation } from "./helpers/pixels";
+import { ZONES } from "../lib/zones";
 
 test.use({
   launchOptions: {
@@ -88,5 +89,72 @@ test.describe("P8 Look: Composition & Evidence", () => {
     // 30% ± 0.5% means [0.295, 0.305]
     expect(meanBoundary).toBeGreaterThanOrEqual(0.295);
     expect(meanBoundary).toBeLessThanOrEqual(0.305);
+  });
+
+  test("palette: water-top hue 160-200°, s <= 0.65, relLuma 0.22-0.45; no non-abyss zone bg s > 0.65; abyss hexes unchanged", () => {
+    const surface = ZONES.find((z) => z.id === "surface");
+    expect(surface).toBeDefined();
+    const waterTop = surface!.bgBot;
+    const h = hue(waterTop);
+    const s = saturation(waterTop);
+    const luma = relativeLuma(waterTop);
+
+    expect(h).toBeGreaterThanOrEqual(160);
+    expect(h).toBeLessThanOrEqual(200);
+    expect(s).toBeLessThanOrEqual(0.65);
+    expect(luma).toBeGreaterThanOrEqual(0.22);
+    expect(luma).toBeLessThanOrEqual(0.45);
+
+    // No zone bg s > 0.65 (abyss is frozen and excluded)
+    for (const zone of ZONES) {
+      if (zone.id === "abyss") continue;
+      expect(saturation(zone.bgTop)).toBeLessThanOrEqual(0.65);
+      expect(saturation(zone.bgBot)).toBeLessThanOrEqual(0.65);
+    }
+
+    // Abyss hexes unchanged
+    const abyss = ZONES.find((z) => z.id === "abyss");
+    expect(abyss).toBeDefined();
+    expect(abyss!.bgTop.toLowerCase()).toBe("#050d1a");
+    expect(abyss!.bgBot.toLowerCase()).toBe("#020408");
+    expect(abyss!.text.toLowerCase()).toBe("#b4c2d0");
+    expect(abyss!.accent.toLowerCase()).toBe("#ff9f43");
+  });
+
+  test("dark-text floor: every dark-text zone min(relLuma(bgTop), relLuma(bgBot)) >= 0.21", () => {
+    for (const zone of ZONES) {
+      if (relativeLuma(zone.text) < 0.2) {
+        const topLuma = relativeLuma(zone.bgTop);
+        const botLuma = relativeLuma(zone.bgBot);
+        const minLuma = Math.min(topLuma, botLuma);
+        expect(minLuma).toBeGreaterThanOrEqual(0.21);
+      }
+    }
+  });
+
+  test("fallback split: step at x=1% >= 0.05 luma with ?fx=off", async ({ page }) => {
+    await page.goto("/?fx=off");
+    await page.waitForLoadState("networkidle");
+
+    const shot = await page.screenshot();
+    const img = decode(shot);
+    const x = Math.round(img.width * 0.01);
+    let maxStep = 0;
+    let boundaryRow = -1;
+
+    for (let y = 0; y < img.height - 1; y++) {
+      const l1 = relativeLuma(img.at(x, y));
+      const l2 = relativeLuma(img.at(x, y + 1));
+      const step = Math.abs(l2 - l1);
+      if (step > maxStep) {
+        maxStep = step;
+        boundaryRow = y;
+      }
+    }
+
+    console.log(
+      `Fallback split step: ${maxStep.toFixed(4)} at row ${boundaryRow} (${((boundaryRow / img.height) * 100).toFixed(1)}%)`,
+    );
+    expect(maxStep).toBeGreaterThanOrEqual(0.05);
   });
 });
