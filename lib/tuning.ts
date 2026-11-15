@@ -7,9 +7,9 @@ export const T = {
   snowMax: 20, glowMax: 8, bubbleMax: 24, octaves: 4, octavesLow: 2,
   particleScaleLow: 0.5, // P8.4 replaces snowLow
   particleFar: 14,       // 14 tiny at 0.5x scroll
-  particleMid: 7,        // 7 at 1x scroll
-  particleNear: 4,       // 4 large soft blurred discs at 1.8x scroll
-  dropletCount: 3,       // 3 lens-wet droplets/streaks moving opposite to scroll
+  particleMid: 7,         // 7 at 1x scroll
+  particleNear: 4,        // 4 large soft blurred discs at 1.8x scroll
+  dropletCount: 3,        // 3 lens-wet droplets/streaks moving opposite to scroll
   plungeDuration: 3, // s
   gapVh: 25, // empty band between sections
   bobPx: 8,

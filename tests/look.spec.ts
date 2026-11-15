@@ -495,7 +495,7 @@ test.describe("P8 Look: Composition & Evidence", () => {
     await page.waitForTimeout(600);
     await page.addStyleTag({
       content:
-        "header, nav, main, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+        "header, nav, main, aside, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
     });
     await page.waitForTimeout(100);
 
