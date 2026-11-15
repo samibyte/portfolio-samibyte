@@ -241,6 +241,17 @@ export function OceanCanvas() {
             number,
           ],
         },
+        // P8.4 Particles + marine-snow replacement
+        uParticle: {
+          value: [
+            T.particleFar,
+            T.particleMid,
+            T.particleNear,
+            T.dropletCount,
+          ] as [number, number, number, number],
+        },
+        uFauna: { value: initialSettings.fauna ? 1 : 0 },
+        uCamera: { value: initialSettings.camera ? 1 : 0 },
         uBg: { value: uBgValue },
         uFx: { value: uFxValue },
         uDebug: {
@@ -341,7 +352,8 @@ export function OceanCanvas() {
         const fx = fxAt(scrollY + vh * 0.5);
         uFxValue[0] = fx[0];
         uFxValue[1] = fx[1];
-        uFxValue[2] = fx[2] * settings.snowScale;
+        // P8.4 particles replace marine snow, fading with depth so abyss shows 0
+        uFxValue[2] = (1 - fx[2]) * (settings.particleScale > 0 ? 1 : 0);
         uFxValue[3] = settings.glow ? fx[3] : 0;
 
         // 4. uMouse - [x / w, 1 - y / h], init (-1, -1). uMouseVel from pointer spring
@@ -363,6 +375,18 @@ export function OceanCanvas() {
 
         // 5. uOct - T.octaves at full quality, T.octavesLow in tiers 1 and 2
         uniforms.uOct.value = settings.octaves;
+
+        // P8.4 particles & quality tiers
+        // Tier 1: near count halves (4 -> 2)
+        // Tier 2: drops far particles (14 -> 0), near count halves (4 -> 2)
+        uniforms.uParticle.value[0] = signal.tier === 2 ? 0 : T.particleFar;
+        uniforms.uParticle.value[1] = T.particleMid;
+        uniforms.uParticle.value[2] = Math.round(
+          T.particleNear * settings.particleScale,
+        );
+        uniforms.uParticle.value[3] = T.dropletCount;
+        uniforms.uFauna.value = settings.fauna ? 1 : 0;
+        uniforms.uCamera.value = settings.camera ? 1 : 0;
 
         // 6. uTime - signal.time, 0 in tiers 3 and 4 (static)
         uniforms.uTime.value = settings.static ? 0 : signal.time;

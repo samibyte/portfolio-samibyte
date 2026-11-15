@@ -12,7 +12,7 @@ type WheelProbe = { count: number; prevented: boolean };
 
 test.describe("C5: native scroll over one fixed canvas", () => {
   for (const path of ["/", "/?fx=off"]) {
-    test(`${path} — <main> has no transform and the DOM holds at most one canvas`, async ({
+    test(`${path} — <main> has no transform and exactly one ocean canvas`, async ({
       page,
     }) => {
       await page.goto(path);
@@ -24,10 +24,12 @@ test.describe("C5: native scroll over one fixed canvas", () => {
       expect(transform).toBe("none");
 
       // Effects on mounts the canvas asynchronously; effects off mounts none.
+      // The closing band's FluidGlass canvas is bounded to its own section and
+      // is not the ocean background, so C5 counts only the ocean canvas.
       if (path === "/") {
-        await page.waitForSelector("canvas", { timeout: 30_000 });
+        await page.waitForSelector("canvas[data-ocean-canvas]", { timeout: 30_000 });
       }
-      const canvases = await page.locator("canvas").count();
+      const canvases = await page.locator("canvas[data-ocean-canvas]").count();
       expect(canvases).toBeLessThanOrEqual(1);
       if (path === "/") expect(canvases).toBe(1);
     });

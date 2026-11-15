@@ -26,7 +26,10 @@ uniform vec4  uCaustic;      // causticCells, causticAmp, causticFalloff, causti
 uniform vec4  uPersp;        // perspNearScale, perspFarScale, fogStrength, flowBlend (P8.3)
 uniform vec4  uRefr;         // refractNear, refractFar, refractScale, refractSpeed (P8.3)
 uniform vec4  uSpec;         // specPower, specAmp, specFalloff, 0  (P8.3)
-uniform int   uDebug;        // 0 = off, 1 = under mask, 11 = sky+surface, 12 = refraction, 13 = caustics, 14 = rays (P8.3)
+uniform vec4  uParticle;     // particleFar, particleMid, particleNear, dropletCount (P8.4)
+uniform float uFauna;        // 1.0 = on, 0.0 = off (P8.4 schema)
+uniform float uCamera;       // 1.0 = on, 0.0 = off (P8.4 schema)
+uniform int   uDebug;        // 0 = off, 1 = under mask, 11 = sky+surface, 12 = refraction, 13 = caustics, 14 = rays, 15 = particles (P8.4)
 
 varying vec2 vUv;
 
@@ -35,7 +38,7 @@ varying vec2 vUv;
 //   sky clouds ........... 3   (one 3-octave field reused by four cloud envelopes)
 //   refraction warp ...... 2   (P8.3: one noise per axis, advected by uTime)
 //   god rays ............. 1   (P8.3: one noise tap breaks the shaft edge)
-//   particle flutter ..... 1   (P8.4; snow layer, behind uFx.z gate)
+//   particle flutter ..... 1   (P8.4: snow layer replacement, behind uFx.z gate)
 //   caustics, glow ....... 0   (analytic lattice / sine wander)
 //   total ............... 11
 // P8.3 trade: the caustic noise warp and the glow wander are gone, the bubble
@@ -44,7 +47,8 @@ varying vec2 vUv;
 // mask AA half-width 0.0015, foam asymmetry 2.6 / 0.55, cloud sphere 0.42,
 // near-field edge 0.5, refraction debug gain 40.0, refraction second scale 1.7,
 // refraction skew 0.7 / 0.6, ray fan step 0.08, ray phase step 1.618,
-// ray flicker rate 3.0, caustic lattice skew 1.2 / 0.3, water fbm scale 2.5 / 1.5.
+// ray flicker rate 3.0, caustic lattice skew 1.2 / 0.3, water fbm scale 2.5 / 1.5,
+// particle sizes 0.0022 / 0.0055 / 0.05 / 0.016, near alpha 0.24.
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 
@@ -334,33 +338,93 @@ void main() {
     return;
   }
 
-  // Layer 4: Marine snow - hash-grid particles, 2 parallax layers drifting up, count uFx.z * T.snowMax (20)
-  if (uFx.z > 0.01) {
-    float snowCount = uFx.z * 20.0;
-    float snowFlutter = (noise(uv * 3.0 + vec2(0.0, -t * 0.05)) - 0.5) * 0.008;
-    float snowAcc = 0.0;
-    for (int i = 0; i < 20; i++) {
-      if (float(i) >= snowCount) break;
+  // Layer 4 (P8.4): Particles (three parallax layers + droplets), replacing marine snow.
+  // Constant loop bounds 24 / 12 / 6 / 4 with uniform cutoffs uParticle.x/y/z/w.
+  // Parallax: far 0.5x, mid 1.0x, near 1.8x, droplets moving opposite to scroll.
+  // 1 shared noise tap for particle flutter.
+  // Gated by uFx.z (fades with depth via zone palette, 0 in abyss).
+  // Near alpha <= 0.25 and never the largest edge in x=1% column.
+  float particleLum = 0.0;
+  if (uFx.z > 0.001) {
+    float scroll = uWaterline - 0.7;
+    float flutter = (noise(uv * 3.0 + vec2(0.0, -t * 0.05)) - 0.5) * 0.008;
+    float partAcc = 0.0;
+
+    // 1. Far particles: 14 tiny, 0.5x scroll. Constant bound 24.
+    for (int i = 0; i < 24; i++) {
+      if (float(i) >= uParticle.x) break;
       float fi = float(i);
-      float h1 = hash(vec2(fi * 1.73 + 0.1, fi * 3.17 + 0.2));
-      float h2 = hash(vec2(fi * 2.39 + 0.3, fi * 1.91 + 0.4));
-      float h3 = hash(vec2(fi * 3.41 + 0.5, fi * 2.83 + 0.6));
-      float col = mod(fi, 5.0);
-      float row = floor(fi / 5.0);
-      vec2 basePos = vec2((col + 0.15 + 0.7 * h1) / 5.0, (row + 0.15 + 0.7 * h2) / 4.0);
-      float layer = mod(fi, 2.0);
-      float speed = mix(0.045, 0.02, layer);
-      float y = fract(basePos.y + t * speed);
-      float x = fract(basePos.x + sin(t * 0.6 + h3 * 6.28) * 0.015 + snowFlutter);
-      float radius = mix(0.0035, 0.002, layer);
-      vec2 delta = vec2(fract(uv.x - x + 0.5) - 0.5, fract(uv.y - y + 0.5) - 0.5);
-      delta.x *= uAspect;
-      float d = length(delta);
-      float flake = smoothstep(radius, 0.0, d);
-      snowAcc += flake * mix(1.0, 0.6, layer);
+      float h1 = hash(vec2(fi * 1.73 + 0.11, fi * 3.17 + 0.23));
+      float h2 = hash(vec2(fi * 2.39 + 0.37, fi * 1.91 + 0.41));
+      float h3 = hash(vec2(fi * 3.41 + 0.53, fi * 2.83 + 0.67));
+      float px = fract(h1 + sin(t * 0.3 + h3 * 6.28) * 0.012 + flutter);
+      float py = fract(h2 * 0.7 + t * 0.02 + scroll * 0.5);
+      vec2 d = vec2(fract(uv.x - px + 0.5) - 0.5, fract(uv.y - py + 0.5) - 0.5) * vec2(uAspect, 1.0);
+      float dist = length(d);
+      float r = 0.0022;
+      partAcc += smoothstep(r, 0.0, dist) * 0.30;
     }
-    // Colour is text-adjacent, never pure white (C4 allowance)
-    water += vec3(0.12, 0.15, 0.18) * (clamp(snowAcc, 0.0, 1.0) * uFx.z);
+
+    // 2. Mid particles: 7 medium, 1.0x scroll. Constant bound 12.
+    for (int i = 0; i < 12; i++) {
+      if (float(i) >= uParticle.y) break;
+      float fi = float(i);
+      float h1 = hash(vec2(fi * 4.19 + 0.71, fi * 1.31 + 0.93));
+      float h2 = hash(vec2(fi * 2.83 + 0.43, fi * 3.77 + 0.17));
+      float h3 = hash(vec2(fi * 1.93 + 0.81, fi * 4.61 + 0.59));
+      float px = fract(h1 + sin(t * 0.4 + h3 * 6.28) * 0.016 + flutter * 1.3);
+      float py = fract(h2 * 0.7 + t * 0.03 + scroll * 1.0);
+      vec2 d = vec2(fract(uv.x - px + 0.5) - 0.5, fract(uv.y - py + 0.5) - 0.5) * vec2(uAspect, 1.0);
+      float dist = length(d);
+      float r = 0.0055;
+      partAcc += smoothstep(r, r * 0.2, dist) * 0.35;
+    }
+
+    // 3. Near particles: 4 large soft blurred discs, 1.8x scroll, alpha <= 0.25. Constant bound 6.
+    // Discs kept away from x=1% boundary (C1 step runner-up guard).
+    for (int i = 0; i < 6; i++) {
+      if (float(i) >= uParticle.z) break;
+      float fi = float(i);
+      float h1 = hash(vec2(fi * 5.71 + 0.29, fi * 2.63 + 0.83));
+      float h2 = hash(vec2(fi * 3.11 + 0.61, fi * 6.17 + 0.37));
+      float h3 = hash(vec2(fi * 4.43 + 0.91, fi * 1.87 + 0.47));
+      float px = 0.15 + 0.70 * fract(h1 + sin(t * 0.25 + h3 * 6.28) * 0.02 + flutter * 1.5);
+      float py = fract(0.12 + 0.60 * h2 + t * 0.035 + scroll * 1.8);
+      vec2 d = vec2(fract(uv.x - px + 0.5) - 0.5, fract(uv.y - py + 0.5) - 0.5) * vec2(uAspect, 1.0);
+      float dist = length(d);
+      float r = 0.048 + 0.014 * h3;
+      // Soft blurred disc bokeh, peak alpha <= 0.24 (strictly <= 0.25)
+      float disc = smoothstep(r, r * 0.15, dist) * 0.24;
+      partAcc += disc;
+    }
+
+    // 4. Droplets: 3 lens-wet droplets/streaks, moving opposite to scroll. Constant bound 4.
+    for (int i = 0; i < 4; i++) {
+      if (float(i) >= uParticle.w) break;
+      float fi = float(i);
+      float h1 = hash(vec2(fi * 6.37 + 0.41, fi * 3.89 + 0.19));
+      float h2 = hash(vec2(fi * 1.67 + 0.57, fi * 5.23 + 0.73));
+      float h3 = hash(vec2(fi * 4.91 + 0.33, fi * 2.41 + 0.69));
+      float px = 0.12 + 0.76 * fract(h1 + sin(t * 0.15 + h3 * 6.28) * 0.008);
+      float py = fract(0.15 + 0.55 * h2 + t * 0.01 - scroll * 1.2);
+      vec2 d = vec2(fract(uv.x - px + 0.5) - 0.5, fract(uv.y - py + 0.5) - 0.5) * vec2(uAspect, 0.55);
+      float dist = length(d);
+      float r = 0.014 + 0.006 * h3;
+      float ring = smoothstep(r, r * 0.7, dist) * smoothstep(r * 0.35, r * 0.7, dist);
+      float center = smoothstep(r * 0.5, 0.0, dist) * 0.25;
+      float droplet = (ring * 1.1 + center) * 0.18;
+      partAcc += droplet;
+    }
+
+    particleLum = clamp(partAcc, 0.0, 1.0) * uFx.z * under;
+    // Water-tinted colour (never pure white, C4 compliant)
+    vec3 particleCol = mix(uWaterTop, vec3(0.85, 0.95, 1.0), 0.6);
+    water += particleCol * (particleLum * 0.22);
+  }
+
+  if (uDebug == 15) {
+    gl_FragColor = vec4(vec3(particleLum), 1.0);
+    return;
   }
 
   // Layer 5: Abyss glow - soft pulsing points, count uFx.w * T.glowMax (8), cool #35e0c2

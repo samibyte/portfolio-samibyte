@@ -6,7 +6,7 @@ test.use({
   },
 });
 
-const SECTION_IDS = ["hero", "projects", "about", "skills", "contact"];
+const SECTION_IDS = ["hero", "projects", "about", "skills", "contact", "closing"];
 
 async function openMobileMenu(page: Page) {
   const menu = page.getByRole("button", { name: "Menu" });
@@ -232,16 +232,16 @@ test.describe("C6: no-WebGL fallback", () => {
     page,
   }) => {
     await page.goto("/");
-    await page.waitForSelector("canvas", { timeout: 30_000 });
+    await page.waitForSelector("canvas[data-ocean-canvas]", { timeout: 30_000 });
     await page.waitForTimeout(500);
 
-    await page.locator("canvas").evaluate((element) => {
+    await page.locator("canvas[data-ocean-canvas]").evaluate((element) => {
       const canvas = element as HTMLCanvasElement;
       const gl = canvas.getContext("webgl2");
       gl?.getExtension("WEBGL_lose_context")?.loseContext();
     });
 
-    await expect(page.locator("canvas")).toHaveCount(0);
+    await expect(page.locator("canvas[data-ocean-canvas]")).toHaveCount(0);
     await expect(page.locator("#contact form")).toHaveCount(1);
     const backgrounds = await page.locator("[data-zone]").evaluateAll((nodes) =>
       nodes.map((node) => getComputedStyle(node).backgroundImage),
@@ -401,8 +401,8 @@ test.describe("P6.5: accessibility pass", () => {
     page,
   }) => {
     await page.goto("/");
-    await page.waitForSelector("canvas", { timeout: 30_000 });
-    await expect(page.locator("canvas").first()).toHaveAttribute(
+    await page.waitForSelector("canvas[data-ocean-canvas]", { timeout: 30_000 });
+    await expect(page.locator("canvas[data-ocean-canvas]").first()).toHaveAttribute(
       "aria-hidden",
       "true",
     );

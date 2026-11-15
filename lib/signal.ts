@@ -44,7 +44,9 @@ export interface TierSettings {
   static: boolean;
   dprCap: number;
   octaves: number;
-  snowScale: number;
+  particleScale: number;
+  fauna: boolean;
+  camera: boolean;
   glow: boolean;
   ripple: boolean;
 }
@@ -68,7 +70,9 @@ const TIER_SETTINGS: readonly TierSettings[] = [
     static: false,
     dprCap: T.dprMax,
     octaves: T.octaves,
-    snowScale: 1,
+    particleScale: 1,
+    fauna: true,
+    camera: true,
     glow: true,
     ripple: true,
   },
@@ -77,7 +81,9 @@ const TIER_SETTINGS: readonly TierSettings[] = [
     static: false,
     dprCap: T.dprLow,
     octaves: T.octavesLow,
-    snowScale: T.snowLow,
+    particleScale: T.particleScaleLow,
+    fauna: false,
+    camera: false,
     glow: true,
     ripple: true,
   },
@@ -86,7 +92,9 @@ const TIER_SETTINGS: readonly TierSettings[] = [
     static: false,
     dprCap: T.dprLow,
     octaves: T.octavesLow,
-    snowScale: 0,
+    particleScale: T.particleScaleLow,
+    fauna: false,
+    camera: false,
     glow: false,
     ripple: false,
   },
@@ -95,7 +103,9 @@ const TIER_SETTINGS: readonly TierSettings[] = [
     static: true,
     dprCap: T.dprMax,
     octaves: T.octaves,
-    snowScale: 1,
+    particleScale: 1,
+    fauna: true,
+    camera: true,
     glow: true,
     ripple: false,
   },
@@ -104,7 +114,9 @@ const TIER_SETTINGS: readonly TierSettings[] = [
     static: true,
     dprCap: 0,
     octaves: 0,
-    snowScale: 0,
+    particleScale: 0,
+    fauna: false,
+    camera: false,
     glow: false,
     ripple: false,
   },

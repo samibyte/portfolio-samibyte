@@ -105,47 +105,68 @@ test.describe("C7: quality tier decision", () => {
       static: false,
       dprCap: T.dprMax,
       octaves: T.octaves,
-      snowScale: 1,
+      particleScale: 1,
+      fauna: true,
+      camera: true,
       glow: true,
       ripple: true,
     });
   });
 
-  test("tier 1 caps DPR at 1, halves octaves and snow", () => {
+  test("tier 1 caps DPR at 1, halves octaves and near particles, drops fauna and camera", () => {
     expect(tierSettings(1)).toEqual({
       canvas: true,
       static: false,
       dprCap: T.dprLow,
       octaves: T.octavesLow,
-      snowScale: T.snowLow,
+      particleScale: T.particleScaleLow,
+      fauna: false,
+      camera: false,
       glow: true,
       ripple: true,
     });
   });
 
-  test("tier 2 removes snow, glow and ripple but keeps the canvas", () => {
-    const settings = tierSettings(2);
-    expect(settings.canvas).toBe(true);
-    expect(settings.static).toBe(false);
-    expect(settings.dprCap).toBe(T.dprLow);
-    expect(settings.octaves).toBe(T.octavesLow);
-    expect(settings.snowScale).toBe(0);
-    expect(settings.glow).toBe(false);
-    expect(settings.ripple).toBe(false);
+  test("tier 2 removes far particles, fauna, camera, glow and ripple but keeps the canvas", () => {
+    expect(tierSettings(2)).toEqual({
+      canvas: true,
+      static: false,
+      dprCap: T.dprLow,
+      octaves: T.octavesLow,
+      particleScale: T.particleScaleLow,
+      fauna: false,
+      camera: false,
+      glow: false,
+      ripple: false,
+    });
   });
 
   test("tier 3 is a static canvas", () => {
-    const settings = tierSettings(3);
-    expect(settings.canvas).toBe(true);
-    expect(settings.static).toBe(true);
-    expect(settings.ripple).toBe(false);
+    expect(tierSettings(3)).toEqual({
+      canvas: true,
+      static: true,
+      dprCap: T.dprMax,
+      octaves: T.octaves,
+      particleScale: 1,
+      fauna: true,
+      camera: true,
+      glow: true,
+      ripple: false,
+    });
   });
 
   test("tier 4 has no canvas", () => {
-    const settings = tierSettings(4);
-    expect(settings.canvas).toBe(false);
-    expect(settings.static).toBe(true);
-    expect(settings.dprCap).toBe(0);
+    expect(tierSettings(4)).toEqual({
+      canvas: false,
+      static: true,
+      dprCap: 0,
+      octaves: 0,
+      particleScale: 0,
+      fauna: false,
+      camera: false,
+      glow: false,
+      ripple: false,
+    });
   });
 });
 
@@ -243,7 +264,7 @@ test.describe("C7: adaptive quality under CPU throttling (P6.2)", () => {
     );
 
     // Assert canvas exists, is visible, and has rendered geometry
-    const canvas = page.locator("canvas");
+    const canvas = page.locator("canvas[data-ocean-canvas]");
     await expect(canvas).toBeVisible();
     const box = await canvas.boundingBox();
     expect(box).not.toBeNull();

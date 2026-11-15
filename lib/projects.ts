@@ -2,6 +2,43 @@ import type { Project } from "./types";
 
 export const PROJECTS: Project[] = [
   {
+    slug: "keyspace",
+    title: "KeySpace",
+    tag: "APP",
+    tagline: "Find & List Rental Properties with Ease",
+    stack: [
+      "Next.js",
+      "TypeScript",
+      "Node.js",
+      "Express.js",
+      "PostgreSQL",
+      "Prisma",
+      "JWT",
+      "TanStack Query",
+      "Shadcn UI",
+      "Stripe",
+    ],
+    problem:
+      "Rental property hunting and listing is fragmented, making it difficult for tenants and landlords to connect, manage rental requests, and complete payments in one place.",
+    solution:
+      "Built a modern, responsive rental property marketplace with dedicated roles for Tenants, Landlords, and Admins. Tenants browse and submit rental requests with Stripe payments; Landlords list properties, manage availability, and approve or reject requests; Admins moderate users and monitor platform statistics.",
+    challenge:
+      "Orchestrating a consistent rental state flow from request and approval to payment and activation, while verifying payments on the server with Stripe webhooks to prevent false payment confirmations.",
+    outcome:
+      "Secured rental operations with JWT authentication, role-based access control, and ownership checks. Improved responsiveness by caching and synchronizing frequently changing server data with TanStack Query.",
+    takeaway:
+      "Strengthened expertise in end-to-end transactional workflow design, Stripe webhook payment verification, and JWT-based role security. Gained practical experience building full-stack role-based marketplaces with real payment integration.",
+    source: "https://github.com/samibyte/key-space-client",
+    live: "https://key-space-byte.vercel.app/",
+    role: "Full-Stack Web Developer",
+    architecture: ["Browser (Next.js App Router)", "Server (Node.js/Express)", "Database (PostgreSQL via Prisma)", "Auth (JWT with HTTP-only cookies)"],
+    decision: {
+      title: "Custom JWT route proxy vs. Next.js middleware",
+      tradeoff: "Chose edge-friendly proxy.ts for dynamic fallback routing and HTTP-only cookie management over Next.js middleware to maintain full control over token refresh and role checks.",
+      changed: "Enabled route protection for /dashboard nested paths while preserving anonymous access to public property browsing.",
+    },
+  },
+  {
     slug: "stitchlogic",
     title: "StitchLogic",
     tag: "SYS",

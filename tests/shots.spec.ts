@@ -28,7 +28,7 @@ test("scroll screenshots at 0/15/50/100%", async ({ page }, testInfo) => {
   await page.goto("/");
   await page.waitForLoadState("load");
 
-  const canvas = page.locator("canvas");
+  const canvas = page.locator("canvas[data-ocean-canvas]");
   await canvas.waitFor({ state: "attached" });
   await page.waitForTimeout(600);
 
