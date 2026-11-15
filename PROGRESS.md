@@ -44,5 +44,4 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [ ] P7.5 Final gate
 
 ## Blockers
-- P10.1 blocked: `AGENTS.md` §UI still requires `glass()` on every content surface. The owner must narrow it to chrome, controls, fields, chips and instrument plates before P10.1. Agents may not edit `AGENTS.md`.
-- P10.3 blocked: `SPEC.md` C5/§3.13 allow one fixed canvas. The owner must permit one bounded, `aria-hidden`, pointer-transparent **2D** foreground canvas with no second loop before P10.3. Agents may not edit `SPEC.md`.
+- None.

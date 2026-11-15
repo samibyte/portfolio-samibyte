@@ -52,9 +52,9 @@ Next:   <output of scripts/next-task.sh, or "n/a">
 
 ## UI: one glass system
 
-Every chrome element, control and content surface uses `lib/glass.ts` + the `.glass` rules in `app/globals.css`. Read `skills/glass-ui/SKILL.md` before changing a surface. The owner made this the house style on 2026-11-15 (D-202).
+Chrome, controls, fields, chips and instrument plates use `lib/glass.ts` + the `.glass` rules in `app/globals.css`. Prose and display type sit directly on the water: no card fill, border or shadow around body copy, journey, project content or skill text. Read `skills/glass-ui/SKILL.md` before changing a surface. The owner made this the house style on 2026-11-15 (D-202), narrowed on 2026-11-16 (D-208).
 
-- `glass({ variant, tone, interactive, className })` is the only way to style a surface. Do not hand-roll `rounded-* border ... bg-*` for a panel, bar, card, control, chip or field.
+- `glass({ variant, tone, interactive, className })` is the only way to style a chrome element, control, chip, field or instrument plate. Do not hand-roll `rounded-* border ... bg-*` for a panel, bar, card, control, chip or field.
 - Glass is **CSS-first**: `color-mix`, gradients, inset highlights, state transitions. No canvas, no WebGL context, no JS animation loop, no dependency.
 - The only glass renderer is the bounded `FluidGlass` mark, which subscribes to `onFrame` in `lib/signal.ts`. Keep it that way.
 - `variant` is the shape: `panel`, `bar`, `card`, `control`, `chip`, `field`. `tone` is the fill: `clear`/`regular`/`strong` (zone-aware), `solid` (`--text` fill), `chrome` (fixed dark `--panel`).
