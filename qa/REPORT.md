@@ -37,3 +37,5 @@ canvas-on results nor repeated runs can block or close any task.
 | Item | SPEC | Status |
 |------|------|--------|
 | Real-hardware fps on a mid-range laptop (C7) | SPEC §1 (C7, **U**) | **OPEN** — needs the owner on real hardware |
+| Ocean look: “beautiful/realistic” and the hero reading as water in front of the viewer (P8 goal) | P8 preamble (**U**) | **OPEN** — owner review of the refreshed `qa/screens/` set; an agent may not claim aesthetics |
+| SPEC §5 palette text after the P8 retune | SPEC §5 (**U**) | **OPEN** — owner decision; `lib/zones.ts` is canonical until then |

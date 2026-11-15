@@ -116,6 +116,8 @@ export function OceanCanvas() {
       const uFxValue: [number, number, number, number] = [0, 0, 0, 0];
       const uMouseValue: [number, number] = [-1, -1];
       const skyRgb = hexToRgb(ZONES[0].bgTop);
+      const waterRgb = hexToRgb(ZONES[0].bgBot);
+      const accentRgb = hexToRgb(ZONES[0].accent);
 
       const initialDebug =
         typeof window !== "undefined"
@@ -134,6 +136,77 @@ export function OceanCanvas() {
         uRipple: { value: initialSettings.ripple ? T.ripple : 0 },
         uMouse: { value: uMouseValue },
         uSky: { value: skyRgb },
+        // P8.2 sky + surface + waterline: all static per session, read from lib/tuning.ts and ZONES[0].
+        uWaterTop: { value: waterRgb },
+        uAccent: { value: accentRgb },
+        uWaveAmp: { value: T.waveAmp as number },
+        uBandDepth: { value: T.bandDepth as number },
+        uBandLight: { value: T.bandLight as number },
+        uSkyHorizon: { value: T.skyHorizon as number },
+        uWaveFreq: {
+          value: [
+            T.waveFreq0,
+            T.waveFreq1,
+            T.waveFreq2,
+            T.waveFreq3,
+          ] as [number, number, number, number],
+        },
+        uWaveSpeed: {
+          value: [
+            T.waveSpeed0,
+            T.waveSpeed1,
+            T.waveSpeed2,
+            T.waveSpeed3,
+          ] as [number, number, number, number],
+        },
+        uSun: {
+          value: [T.sunX, T.sunY, T.sunGlow, T.sunStrength] as [
+            number,
+            number,
+            number,
+            number,
+          ],
+        },
+        uCloud: {
+          value: [
+            T.cloudOpacity,
+            T.cloudSpeed,
+            T.cloudShadow,
+            T.cloudScale,
+          ] as [number, number, number, number],
+        },
+        uDepth: {
+          value: [
+            T.depthStart,
+            T.depthGain,
+            T.depthFadeNear,
+            T.depthFadeFar,
+          ] as [number, number, number, number],
+        },
+        uFlow: {
+          value: [T.flowAmp, T.flowSpeed, T.warpAmp, T.warpSpeed] as [
+            number,
+            number,
+            number,
+            number,
+          ],
+        },
+        uFoam: {
+          value: [T.foamWidth, T.foamLight, 0, T.sparkle] as [
+            number,
+            number,
+            number,
+            number,
+          ],
+        },
+        uRippleCfg: {
+          value: [T.rippleFreq, T.rippleSpeed, T.rippleFalloff, 0] as [
+            number,
+            number,
+            number,
+            number,
+          ],
+        },
         uBg: { value: uBgValue },
         uFx: { value: uFxValue },
         uDebug: {

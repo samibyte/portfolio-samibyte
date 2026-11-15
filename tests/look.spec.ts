@@ -157,4 +157,106 @@ test.describe("P8 Look: Composition & Evidence", () => {
     );
     expect(maxStep).toBeGreaterThanOrEqual(0.05);
   });
+
+  test("P8.2 surface band: rows 30-45% are >= 0.02 luma brighter than rows 55-70%", async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      (
+        window as unknown as { __oceanDebug?: { tier?: number } }
+      ).__oceanDebug = { tier: 0 };
+    });
+
+    await page.goto("/");
+    await page.waitForLoadState("load");
+
+    const canvas = page.locator("canvas");
+    await canvas.waitFor({ state: "attached" });
+    await expect(canvas).toBeAttached();
+    await page.waitForTimeout(600);
+
+    await page.addStyleTag({
+      content:
+        "header, nav, main, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+    });
+    await page.waitForTimeout(100);
+
+    const img = decode(await canvas.screenshot());
+    const xStart = Math.round(img.width * 0.1);
+    const xEnd = Math.round(img.width * 0.9);
+
+    const meanRows = (from: number, to: number) => {
+      let sum = 0;
+      let count = 0;
+      for (let y = Math.round(img.height * from); y < Math.round(img.height * to); y++) {
+        for (let x = xStart; x <= xEnd; x++) {
+          sum += relativeLuma(img.at(x, y));
+          count++;
+        }
+      }
+      return sum / count;
+    };
+
+    const band = meanRows(0.3, 0.45);
+    const deep = meanRows(0.55, 0.7);
+    console.log(
+      `Surface band luma ${band.toFixed(4)} vs near-field ${deep.toFixed(4)} (delta ${(band - deep).toFixed(4)})`,
+    );
+
+    expect(band).toBeGreaterThanOrEqual(deep + 0.02);
+  });
+
+  test("P8.2 foam edge: largest x=1% step, runner-up >= 4 rows away is <= 2/3 of it", async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      (
+        window as unknown as { __oceanDebug?: { tier?: number } }
+      ).__oceanDebug = { tier: 0 };
+    });
+
+    await page.goto("/");
+    await page.waitForLoadState("load");
+
+    const canvas = page.locator("canvas");
+    await canvas.waitFor({ state: "attached" });
+    await expect(canvas).toBeAttached();
+    await page.waitForTimeout(600);
+
+    await page.addStyleTag({
+      content:
+        "header, nav, main, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+    });
+    await page.waitForTimeout(100);
+
+    const img = decode(await canvas.screenshot());
+    const x = Math.round(img.width * 0.01);
+    const steps: number[] = [];
+    for (let y = 0; y < img.height - 1; y++) {
+      steps.push(
+        Math.abs(relativeLuma(img.at(x, y + 1)) - relativeLuma(img.at(x, y))),
+      );
+    }
+
+    let maxStep = 0;
+    let maxRow = -1;
+    for (let y = 0; y < steps.length; y++) {
+      if (steps[y] > maxStep) {
+        maxStep = steps[y];
+        maxRow = y;
+      }
+    }
+
+    let runnerUp = 0;
+    for (let y = 0; y < steps.length; y++) {
+      if (Math.abs(y - maxRow) >= 4 && steps[y] > runnerUp) runnerUp = steps[y];
+    }
+
+    console.log(
+      `Foam edge step ${maxStep.toFixed(4)} at ${((maxRow / img.height) * 100).toFixed(1)}%; runner-up ${runnerUp.toFixed(4)} (limit ${(maxStep * (2 / 3)).toFixed(4)})`,
+    );
+
+    expect(maxStep).toBeGreaterThan(0.02);
+    expect(runnerUp).toBeLessThanOrEqual(maxStep * (2 / 3));
+  });
 });
