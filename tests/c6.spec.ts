@@ -8,17 +8,8 @@ test.use({
 
 const SECTION_IDS = ["hero", "projects", "about", "skills", "contact", "closing"];
 
-async function openMobileMenu(page: Page) {
-  const menu = page.getByRole("button", { name: "Menu" });
-  if (!(await menu.isVisible())) return;
-
-  // A click can land before React has hydrated; retry until the menu opens.
-  for (let attempt = 0; attempt < 5; attempt++) {
-    if ((await menu.getAttribute("aria-expanded")) === "true") return;
-    await menu.click();
-    await page.waitForTimeout(150);
-  }
-  await expect(menu).toHaveAttribute("aria-expanded", "true");
+async function openMobileMenu(_page: Page) {
+  // P10.0: dock is a fixed left rail; no expandable mobile menu toggle is needed.
 }
 
 async function expectStaticFallback(page: Page) {
@@ -396,14 +387,25 @@ test.describe("P6.5: accessibility pass", () => {
       .poll(() => page.evaluate(() => window.location.hash))
       .toBe("#skills");
 
-    const navBottom = await page
-      .locator("nav")
-      .evaluate((nav) => nav.getBoundingClientRect().bottom);
     const sectionTop = await page
       .locator("#skills")
       .evaluate((section) => section.getBoundingClientRect().top);
 
-    expect(sectionTop).toBeGreaterThanOrEqual(navBottom);
+    const viewport = page.viewportSize() ?? { width: 1280, height: 720 };
+    expect(sectionTop).toBeGreaterThanOrEqual(0);
+    expect(sectionTop).toBeLessThanOrEqual(viewport.height / 3);
+
+    const headingHit = await page.evaluate(() => {
+      const heading = document.getElementById("skills-title");
+      if (!heading) return false;
+      const rect = heading.getBoundingClientRect();
+      const hit = document.elementFromPoint(
+        rect.left + rect.width / 2,
+        rect.top + rect.height / 2,
+      );
+      return hit !== null && (hit === heading || heading.contains(hit));
+    });
+    expect(headingHit, "skills heading is elementFromPoint hit").toBe(true);
   });
 
   test("the canvas is decorative, images have alt text, and the nav marks the current page", async ({
@@ -516,6 +518,10 @@ test.describe("C6: Projects, Resume and Contact reachable without scrolling", ()
         "Resume must be clickable without scrolling",
       ).toBe(0);
       await expect(resume).toHaveAttribute("href", /^https?:\/\//);
+
+      await page.context().route("https://drive.google.com/**", (route) =>
+        route.fulfill({ status: 200, contentType: "text/html", body: "OK" }),
+      );
 
       const [popup] = await Promise.all([
         page.waitForEvent("popup"),

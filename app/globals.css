@@ -76,6 +76,30 @@ summary,
   scroll-margin-top: 5rem;
 }
 
+/* Dock content gutter (P10.0): full-bleed sections, content offsets after dock */
+#hero > div.absolute.inset-x-0,
+#projects > div,
+#about > div,
+#skills > div,
+#contact > div,
+#closing > div,
+header,
+main:has(header) section > div {
+  padding-left: 3.5rem;
+}
+@media (min-width: 768px) {
+  #hero > div.absolute.inset-x-0,
+  #projects > div,
+  #about > div,
+  #skills > div,
+  #contact > div,
+  #closing > div,
+  header,
+  main:has(header) section > div {
+    padding-left: 4.5rem;
+  }
+}
+
 [data-zone] {
   color: var(--text);
 }

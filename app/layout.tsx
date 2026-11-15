@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Instrument_Serif } from "next/font/google";
-import { Nav } from "@/components/ui/Nav";
-import { DiveLine } from "@/components/ui/DiveLine";
-import { EffectsToggle } from "@/components/ui/EffectsToggle";
+import { Dock } from "@/components/ui/Dock";
 import { OceanProvider } from "@/components/ocean/OceanProvider";
 import { content, SITE_URL } from "@/lib/content";
 import "./globals.css";
@@ -60,15 +58,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <OceanProvider />
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded focus:bg-[var(--bg-top)] focus:px-4 focus:py-2 focus:text-[var(--text)]"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-16 md:focus:left-20 focus:z-50 focus:rounded focus:bg-[var(--bg-top)] focus:px-4 focus:py-2 focus:text-[var(--text)]"
         >
           Skip to content
         </a>
-        {/* Chrome slots: EffectsToggle (P6.3). */}
-        <Nav />
-        <DiveLine />
-        <EffectsToggle />
-        <main id="main-content" tabIndex={-1} className="z-1 flex flex-1 flex-col">
+        <Dock />
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="z-1 flex flex-1 flex-col"
+        >
           {children}
         </main>
       </body>

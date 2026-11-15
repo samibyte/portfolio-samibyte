@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P10 · **Next:** P10.0
+**Phase:** P10 · **Next:** P10.1
 
 Task index. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS`, the checks named in the task's **Done** passed, and the commit exists.
@@ -24,7 +24,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P9.2 Evidence
 
 ## P10 Content in water (see `phases/P10.md`)
-- [ ] P10.0 Left dock replaces the top navbar
+- [x] P10.0 Left dock replaces the top navbar
 - [ ] P10.1 Type contract + glass scope
 - [ ] P10.2 Environment bridge
 - [ ] P10.3 Foreground atmosphere canvas

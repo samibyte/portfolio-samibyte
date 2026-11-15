@@ -78,16 +78,43 @@ export function EffectsToggle() {
       type="button"
       data-chrome="effects-toggle"
       aria-pressed={reduced}
+      aria-label="Reduce motion"
       onClick={toggle}
       className={glass({
         variant: "control",
         tone: reduced ? "solid" : "chrome",
         interactive: true,
         className:
-          "fixed bottom-3 right-3 z-10 px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e0e8f0]",
+          "flex items-center w-full min-h-[44px] h-11 px-2.5 text-xs font-mono tracking-wider focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e0e8f0]",
       })}
     >
-      Reduce motion
+      <span className="flex items-center justify-center w-6 h-6 shrink-0">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          className="w-5 h-5 shrink-0"
+        >
+          {reduced ? (
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          ) : (
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          )}
+        </svg>
+      </span>
+      <span className="hidden md:group-hover:inline md:group-focus-within:inline ml-3 text-xs font-mono tracking-wider uppercase truncate">
+        {reduced ? "Static" : "Reduce motion"}
+      </span>
     </button>
   );
 }
