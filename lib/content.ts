@@ -1,3 +1,7 @@
+export const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL || "https://samibyte.vercel.app"
+).replace(/\/+$/, "");
+
 const resumeUrl =
   "https://drive.google.com/file/d/1ie1hDAg067E3UA4QIzTW2S5lDkT-kf93/view";
 

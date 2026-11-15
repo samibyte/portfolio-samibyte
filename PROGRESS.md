@@ -1,6 +1,6 @@
 # PROGRESS
 
-**Phase:** P8 · **Next:** P7.1
+**Phase:** P10 · **Next:** P10.0
 
 Task index. `scripts/next-task.sh` reads the first unchecked line: `- [ ] <ID> <title>`.
 Tick a box only when `npm run gate` printed `GATE: PASS`, the checks named in the task's **Done** passed, and the commit exists.
@@ -23,9 +23,22 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P9.1 Chrome + content migration
 - [x] P9.2 Evidence
 
+## P10 Content in water (see `phases/P10.md`)
+- [ ] P10.0 Left dock replaces the top navbar
+- [ ] P10.1 Type contract + glass scope
+- [ ] P10.2 Environment bridge
+- [ ] P10.3 Foreground atmosphere canvas
+- [ ] P10.4 Water-aware blocks
+- [ ] P10.5 Hero masthead (variant A)
+- [ ] P10.6 Projects as strata
+- [ ] P10.7 About as a sounding line
+- [ ] P10.8 Skills as a field
+- [ ] P10.9 Contact beacon + closing readout
+- [ ] P10.10 Tune + evidence
+
 ## P7 Launch
 - [x] P7.1 Resolve content slots
-- [ ] P7.2 SEO surface
+- [x] P7.2 SEO surface
 - [ ] P7.3 Deploy
 - [ ] P7.4 Evidence report
 - [ ] P7.5 Final gate

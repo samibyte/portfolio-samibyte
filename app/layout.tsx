@@ -4,7 +4,7 @@ import { Nav } from "@/components/ui/Nav";
 import { DiveLine } from "@/components/ui/DiveLine";
 import { EffectsToggle } from "@/components/ui/EffectsToggle";
 import { OceanProvider } from "@/components/ocean/OceanProvider";
-import { content } from "@/lib/content";
+import { content, SITE_URL } from "@/lib/content";
 import "./globals.css";
 
 const inter = Inter({
@@ -19,9 +19,7 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-  ),
+  metadataBase: new URL(SITE_URL),
   title: content.title,
   description: content.description,
   openGraph: {
@@ -37,6 +35,15 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
+const personJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: content.name,
+  jobTitle: content.role,
+  url: SITE_URL,
+  sameAs: [content.links.github, content.links.linkedin, content.links.x],
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -44,6 +51,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${inter.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(personJsonLd).replace(/</g, "\\u003c"),
+          }}
+        />
         <OceanProvider />
         <a
           href="#main-content"
