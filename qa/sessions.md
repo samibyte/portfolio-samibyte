@@ -70,3 +70,4 @@ One line per session: `date | task | gate | checks | commit | model`. Append onl
 2026-11-16 | P10.1 Type contract + glass scope | PASS | c4: 2/2, c6: 26/26, skips: 0 | P10.1 type contract glass scope | Claude Sonnet 4.6 (Thinking)
 2026-11-16 | P10.2 Environment bridge | PASS | c7: 65/65 passed, 1 skipped (mobile 4x CPU throttle, expected); c1: 4/4; c4+c5+c6: 36/36; one-loop c5-grep unchanged | P10.2 Environment bridge | DeepSeek V4.1 Flash Free
 2026-11-16 | P10.6a ProjectCard on water | PASS | gate: PASS; c4: 2/2; c6: 16/26 (10 pre-existing failures, identical before/after this change — verified by `git stash` + rerun); tsc clean | ProjectCard on water (D-208) | Free Models Router
+2026-11-16 | P10.6a hover fix | PASS | architecture node labels wrap inside 148px boxes (wrapLabel, 13px, ≤16 chars/line); KeySpace hover no longer spills text; gate PASS; tsc clean | ProjectCard hover architecture label wrap | Free Models Router
