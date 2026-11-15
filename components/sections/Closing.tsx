@@ -13,6 +13,10 @@ import FluidGlass from "@/components/ui/FluidGlass";
  * The wordmark is drawn by the glass's own canvas so the ring can bend it; the
  * clipped <p className="fluid-glass__label"> keeps it readable to screen
  * readers and to search engines (the canvas itself is aria-hidden).
+ *
+ * The band is full-bleed and 56vh tall (min 22rem) so the torus has room to
+ * follow the pointer without reaching the canvas boundary, where the mark would
+ * be clipped.
  */
 export function Closing() {
   return (
@@ -20,7 +24,7 @@ export function Closing() {
       id="closing"
       data-zone="abyss"
       aria-label="samibyte"
-      className="relative isolate overflow-hidden px-6"
+      className="relative isolate overflow-hidden"
     >
       <div
         aria-hidden="true"
@@ -31,31 +35,29 @@ export function Closing() {
         }}
       />
 
-      <div className="mx-auto w-full max-w-6xl">
-        <div className="h-[calc(var(--vh)*40)] min-h-[18rem] w-full">
-          <FluidGlass
-            className="fluid-glass--mark"
-            text="samibyte"
-            fontWeight={400}
-            shape="torus"
-            size={260}
-            position={[0.5, 0.5]}
-            interaction="follow"
-            smoothness={0.72}
-            wobble={0.18}
-            spin={0}
-            idle={false}
-            refraction={1}
-            dispersion={0.35}
-            reflection={1}
-            tint={0.1}
-            color="#ff9f43"
-            shadow={0.5}
-            elevation={0.4}
-            morphOnClick={false}
-            maxDevicePixelRatio={1.5}
-          />
-        </div>
+      <div className="h-[calc(var(--vh)*56)] min-h-[22rem] w-full">
+        <FluidGlass
+          className="fluid-glass--mark"
+          text="samibyte"
+          fontWeight={400}
+          shape="torus"
+          size={260}
+          position={[0.5, 0.5]}
+          interaction="follow"
+          smoothness={0.72}
+          wobble={0.18}
+          spin={0}
+          idle={false}
+          refraction={1}
+          dispersion={0.35}
+          reflection={1}
+          tint={0.1}
+          color="#ff9f43"
+          shadow={0.5}
+          elevation={0.4}
+          morphOnClick={false}
+          maxDevicePixelRatio={1.5}
+        />
       </div>
     </section>
   );
