@@ -260,6 +260,15 @@ export function OceanCanvas() {
             0,
           ] as [number, number, number, number],
         },
+        // P8.6 camera + vignette + grain (gated by uCamera)
+        uGrade: {
+          value: [T.vignette, T.grain, T.drift, T.roll] as [
+            number,
+            number,
+            number,
+            number,
+          ],
+        },
         uBg: { value: uBgValue },
         uFx: { value: uFxValue },
         uDebug: {

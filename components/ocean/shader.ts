@@ -30,7 +30,8 @@ uniform vec4  uParticle;     // particleFar, particleMid, particleNear, dropletC
 uniform float uFauna;        // 1.0 = on, 0.0 = off (P8.4 schema)
 uniform float uCamera;       // 1.0 = on, 0.0 = off (P8.4 schema)
 uniform vec4  uFaunaConfig;  // schools, jellies, alpha, (unused) (P8.5)
-uniform int   uDebug;        // 0 = off, 1 = under mask, 11 = sky+surface, 12 = refraction, 13 = caustics, 14 = rays, 15 = particles, 16 = fauna (P8.5)
+uniform vec4  uGrade;        // vignette, grain, driftX, rollRad (P8.6), gated by uCamera
+uniform int   uDebug;        // 0 = off, 1 = under mask, 11 = sky+surface, 12 = refraction, 13 = caustics, 14 = rays, 15 = particles, 16 = fauna, 17 = grade
 
 varying vec2 vUv;
 
@@ -41,6 +42,7 @@ varying vec2 vUv;
 //   god rays ............. 1   (P8.3: one noise tap breaks the shaft edge)
 //   particle flutter ..... 1   (P8.4: snow layer replacement, behind uFx.z gate)
 //   caustics, glow ....... 0   (analytic lattice / sine wander)
+//   grade / grain ........ 0   (P8.6: hash speckle, not a noise() tap)
 //   total ............... 11
 // P8.3 trade: the caustic noise warp and the glow wander are gone, the bubble
 // wobble reuses the flow sample, and that pays for the two refraction taps.
@@ -49,7 +51,8 @@ varying vec2 vUv;
 // near-field edge 0.5, refraction debug gain 40.0, refraction second scale 1.7,
 // refraction skew 0.7 / 0.6, ray fan step 0.08, ray phase step 1.618,
 // ray flicker rate 3.0, caustic lattice skew 1.2 / 0.3, water fbm scale 2.5 / 1.5,
-// particle sizes 0.0022 / 0.0055 / 0.05 / 0.016, near alpha 0.24.
+// particle sizes 0.0022 / 0.0055 / 0.05 / 0.016, near alpha 0.24,
+// vignette corner edges x 0.86 / y 0.78, grain lattice 640, grain rate 30.
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 
@@ -211,8 +214,19 @@ void main() {
     return;
   }
 
+  // 3b. Camera (P8.6): slow x-only drift + roll <= 0.2 deg, applied to the colour
+  //     sample only. The C1 mask above is from undisplaced vUv, so it never moves.
+  //     uCamera = 0 on tiers 1/2; tier 3 freezes it because uTime = 0.
+  vec2 camLocal = vUv - 0.5;
+  float camRollRad = sin(t * 0.037 + 1.3) * uGrade.w;
+  float camCos = cos(camRollRad), camSin = sin(camRollRad);
+  vec2 camRot = vec2(camCos * camLocal.x - camSin * camLocal.y,
+                     camSin * camLocal.x + camCos * camLocal.y) - camLocal;
+  vec2 camShift = (vec2(sin(t * 0.031) * uGrade.z, 0.0) + camRot) * uCamera;
+  uv += camShift;
+
   // 3. Sky (30%): gradient, cloud ranks, sun.
-  vec3 sky = skyLayer(vUv, wl, t);
+  vec3 sky = skyLayer(vUv + camShift, wl, t);
 
   // 4. Perspective scale: near rows (bottom of the frame) see larger, faster
   //    features than far rows near the waterline.
@@ -609,6 +623,24 @@ void main() {
   float spark = pow(max(0.0, sin(vUv.x * 71.0 + t * 2.3)), 24.0)
               * smoothstep(0.40, 0.90, nf) * under;
   color += vec3(1.0) * spark * uFoam.w;
+
+  // Grade (P8.6): mild corner vignette (<= 6% falloff) + very light grain (<= 0.01).
+  // Both are gated by uCamera (tiers 1/2 off) and frozen on tier 3 (t = 0).
+  float edgeX = smoothstep(0.86, 1.0, abs(vUv.x - 0.5) * 2.0);
+  float edgeY = smoothstep(0.78, 1.0, abs(vUv.y - 0.5) * 2.0);
+  float vigDark = uGrade.x * edgeX * edgeY * uCamera;
+  float grainOff = (hash(floor(vUv * vec2(uAspect, 1.0) * 640.0)
+                         + vec2(floor(t * 30.0) * 7.13, floor(t * 30.0) * 3.71)) - 0.5)
+                   * uGrade.y * uCamera;
+  color *= 1.0 - vigDark;
+  color += vec3(grainOff);
+
+  if (uDebug == 17) {
+    // Grade isolation: vignette falloff (capped at 6%); grain is proven by the
+    // consecutive-frame delta in look.spec. Both read 0 when uCamera = 0.
+    gl_FragColor = vec4(vec3(vigDark), 1.0);
+    return;
+  }
 
   if (uDebug == 11) { gl_FragColor = vec4(color, 1.0); return; }
   gl_FragColor = vec4(color, 1.0);

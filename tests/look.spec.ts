@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { decode, relativeLuma, hue, saturation, meanRegion } from "./helpers/pixels";
+import { decode, relativeLuma, hue, saturation, meanRegion, diffRatio } from "./helpers/pixels";
 import { ZONES } from "../lib/zones";
 
 test.use({
@@ -578,5 +578,204 @@ test.describe("P8 Look: Composition & Evidence", () => {
     expect(covTier0).toBeGreaterThan(0);
     expect(covTier1).toBe(0);
     expect(covAbyss).toBe(0);
+  });
+
+  // ── P8.6 Camera + vignette + grain ──────────────────────────────────────────
+
+  test("P8.6 grade: vignette corner >= 0.02 darker than 10-14% inset (surface stop), <= 6% falloff; grain <= 0.01", async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      (
+        window as unknown as { __oceanDebug?: { tier?: number } }
+      ).__oceanDebug = { tier: 0 };
+    });
+
+    await page.goto("/");
+    await page.waitForLoadState("load");
+    const canvas = page.locator("canvas[data-ocean-canvas]");
+    await canvas.waitFor({ state: "attached" });
+    await page.waitForTimeout(600);
+    await page.addStyleTag({
+      content:
+        "header, nav, main, aside, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+    });
+    await page.waitForTimeout(100);
+
+    // ── grain: consecutive-frame delta in a flat sky patch ──
+    const frameA = decode(await canvas.screenshot());
+    await page.waitForTimeout(120);
+    const frameB = decode(await canvas.screenshot());
+
+    const gw = frameA.width;
+    const gh = frameA.height;
+    const grainPatch = {
+      x: Math.round(gw * 0.12),
+      y: Math.round(gh * 0.05),
+      width: Math.round(gw * 0.12),
+      height: Math.round(gh * 0.05),
+    };
+    let grainSum = 0;
+    let grainCount = 0;
+    for (let y = grainPatch.y; y < grainPatch.y + grainPatch.height; y++) {
+      for (let x = grainPatch.x; x < grainPatch.x + grainPatch.width; x++) {
+        grainSum += Math.abs(
+          relativeLuma(frameB.at(x, y)) - relativeLuma(frameA.at(x, y)),
+        );
+        grainCount++;
+      }
+    }
+    const grainDelta = grainSum / Math.max(1, grainCount);
+
+    // ── vignette: 15% surface stop (waterline ~27%), same-row corner vs inset ──
+    await page.evaluate(() => {
+      window.scrollTo(0, Math.round(0.15 * 0.3 * window.innerHeight));
+    });
+    await page.waitForTimeout(300);
+    const img = decode(await canvas.screenshot());
+
+    const w = img.width;
+    const h = img.height;
+    const rowY = Math.round(h * 0.01);
+    const rowH = Math.max(2, Math.round(h * 0.05));
+    const colW = Math.max(2, Math.round(w * 0.04));
+
+    const cornerL = meanRegion(img, { x: 0, y: rowY, width: colW, height: rowH });
+    const cornerR = meanRegion(img, {
+      x: w - colW,
+      y: rowY,
+      width: colW,
+      height: rowH,
+    });
+    const insetL = meanRegion(img, {
+      x: Math.round(w * 0.1),
+      y: rowY,
+      width: colW,
+      height: rowH,
+    });
+    const insetR = meanRegion(img, {
+      x: Math.round(w * 0.86),
+      y: rowY,
+      width: colW,
+      height: rowH,
+    });
+
+    const cornerLuma = (cornerL.luma + cornerR.luma) / 2;
+    const insetLuma = (insetL.luma + insetR.luma) / 2;
+
+    console.log(
+      `Grade: corner luma ${cornerLuma.toFixed(4)} vs inset ${insetLuma.toFixed(4)} (delta ${(insetLuma - cornerLuma).toFixed(4)}); grain delta ${grainDelta.toFixed(4)}`,
+    );
+
+    expect(grainDelta).toBeGreaterThan(0);
+    expect(grainDelta).toBeLessThanOrEqual(0.01);
+
+    // Outer 4% corner patch is at least 0.02 darker (relative luma) than the
+    // 10-14% inset band in the same rows.
+    expect(insetLuma - cornerLuma).toBeGreaterThanOrEqual(0.02);
+
+    // Debug layer 17 isolates the grade and caps the corner falloff at 0.06.
+    await page.evaluate(() => {
+      (window as unknown as { __oceanDebug?: object }).__oceanDebug = {
+        tier: 0,
+        layer: 17,
+      };
+    });
+    await page.waitForTimeout(300);
+    const gradeImg = decode(await canvas.screenshot());
+
+    let gradeMax = 0;
+    let gradeCornerSum = 0;
+    for (let y = rowY; y < rowY + rowH; y++) {
+      for (let x = 0; x < colW; x++) {
+        gradeCornerSum += gradeImg.at(x, y)[0] / 255;
+      }
+    }
+    for (let y = 0; y < gradeImg.height; y++) {
+      for (let x = 0; x < gradeImg.width; x++) {
+        const v = gradeImg.at(x, y)[0] / 255;
+        if (v > gradeMax) gradeMax = v;
+      }
+    }
+    const gradeCornerMean = gradeCornerSum / Math.max(1, colW * rowH);
+
+    console.log(
+      `Debug layer 17 (grade): corner mean ${gradeCornerMean.toFixed(4)}, max ${gradeMax.toFixed(4)}`,
+    );
+    expect(gradeCornerMean).toBeGreaterThanOrEqual(0.02);
+    expect(gradeMax).toBeLessThanOrEqual(0.06);
+  });
+
+  test("P8.6 camera: debug 17 coverage > 0 at tier 0, 0 at tier 1; tier 3 frames 600ms apart pixel-identical", async ({
+    page,
+  }) => {
+    const measureGradeCoverage = async (tier: number): Promise<number> => {
+      await page.evaluate(
+        ({ t }: { t: number }) => {
+          (window as unknown as { __oceanDebug?: object }).__oceanDebug = {
+            tier: t,
+            layer: 17,
+          };
+        },
+        { t: tier },
+      );
+      await page.waitForTimeout(300);
+
+      const shot = decode(
+        await page.locator("canvas[data-ocean-canvas]").screenshot(),
+      );
+      let lit = 0;
+      const total = shot.width * shot.height;
+      for (let y = 0; y < shot.height; y++) {
+        for (let x = 0; x < shot.width; x++) {
+          const [r, g, b] = shot.at(x, y);
+          if (r + g + b > 15) lit++;
+        }
+      }
+      return lit / total;
+    };
+
+    await page.addInitScript(() => {
+      (
+        window as unknown as { __oceanDebug?: { tier?: number; layer?: number } }
+      ).__oceanDebug = { tier: 0, layer: 17 };
+    });
+    await page.goto("/");
+    await page.waitForLoadState("load");
+    const canvas = page.locator("canvas[data-ocean-canvas]");
+    await canvas.waitFor({ state: "attached" });
+    await page.waitForTimeout(600);
+    await page.addStyleTag({
+      content:
+        "header, nav, main, aside, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+    });
+    await page.waitForTimeout(100);
+
+    const covTier0 = await measureGradeCoverage(0);
+    const covTier1 = await measureGradeCoverage(1);
+
+    console.log(
+      `Debug layer 17 (grade): covTier0=${covTier0.toFixed(4)}, covTier1=${covTier1.toFixed(4)}`,
+    );
+    expect(covTier0).toBeGreaterThan(0);
+    expect(covTier1).toBe(0);
+
+    // Tier 3 is static: identical pixels after 600 ms.
+    await page.evaluate(() => {
+      (window as unknown as { __oceanDebug?: object }).__oceanDebug = {
+        tier: 3,
+        layer: 0,
+      };
+      window.scrollTo(0, 0);
+    });
+    await page.waitForTimeout(600);
+
+    const staticA = decode(await canvas.screenshot());
+    await page.waitForTimeout(600);
+    const staticB = decode(await canvas.screenshot());
+
+    const changed = diffRatio(staticA, staticB, undefined, 0);
+    console.log(`Tier 3 static: changed pixel ratio after 600ms = ${changed}`);
+    expect(changed).toBe(0);
   });
 });

@@ -53,4 +53,10 @@ export const T = {
   flowSpeed2: 0.032,    // second flow speed (counter direction)
   specPower: 28.0,      // pow(dot, specPower): gloss exponent for wave specular
   specAmp: 0.055,       // peak specular amplitude (additive)
+
+  // P8.6 Camera + vignette + grain (uGrade = vignette, grain, drift, roll)
+  vignette: 0.06,       // max multiplicative corner falloff (must be <= 6%)
+  grain: 0.01,          // peak-to-peak grain amplitude (must be <= 0.01); GLSL uses (h - 0.5) * grain
+  drift: 0.006,         // x-only drift amplitude in uv (0.6% of width); no vertical drift
+  roll: 0.0034,         // max roll in radians (~0.195 deg), colour sample only, never the mask
 } as const;
