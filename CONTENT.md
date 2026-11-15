@@ -22,9 +22,11 @@ Transcribe **verbatim**. Do not rewrite, shorten, or "improve" a sentence. Do no
 | LinkedIn | https://www.linkedin.com/in/samibyte |
 | X | https://x.com/samibyt3 |
 | Resume | https://drive.google.com/file/d/1ie1hDAg067E3UA4QIzTW2S5lDkT-kf93/view |
-| Site URL | `[USER: final production domain]` |
+| Site URL | https://samibyte.vercel.app |
 
-Resume: the live site links a Google Drive file. Use it as `resumeUrl` until the owner supplies a hosted PDF at `/resume.pdf` — `[USER: replace resumeUrl with /resume.pdf when the PDF exists]`. Do not generate a fake PDF.
+Site URL confirmed by the owner **2026-11-15** as the deployed origin. `P7.2` builds `SITE_URL` / `metadataBase` from it; if a custom domain is attached at `P7.3`, change this row and that constant together.
+
+Resume: the live site links a Google Drive file, verified HTTP 200 on **2026-11-15**. It is `resumeUrl`; the owner chose to keep it over a hosted `/resume.pdf` (D-117). Do not generate a fake PDF.
 
 ---
 
@@ -83,18 +85,18 @@ Softvence description (verbatim): *Built and maintained client-facing web applic
 Grouped exactly as on the live site. Do not add a skill. Do not mark anything "used in projects" unless it appears in a project's stack below.
 
 - **Languages** — TypeScript, JavaScript, Python
-- **Frontend** — React, Next.js, Redux Toolkit, Framer Motion, GSAP, Three.js, Tailwind CSS, Shadcn UI
-- **Backend** — Node.js, Express, Socket.io, GraphQL, JWT Auth, Zod
+- **Frontend** — React, Next.js, Redux Toolkit, Framer Motion, GSAP, Tailwind CSS, Shadcn UI
+- **Backend** — Node.js, Express, Socket.io, JWT Auth, Zod
 - **Databases & ORMs** — PostgreSQL, MongoDB, MySQL, Prisma ORM, Firebase, Redis
 - **Tools & Platforms** — Docker, Git, GitHub Actions, Vercel, Postman, Linux
 
-`[USER: remove anything you would not defend in an interview — Framer Motion, GSAP, Three.js, GraphQL, Redis and Firebase appear on the site but in none of the project stacks]`
+Resolved by the owner **2026-11-15**: `Three.js` and `GraphQL` removed; every remaining item is defended. Do not re-add a skill that is in no project stack without the owner saying so.
 
 ---
 
 ## Projects
 
-Four projects. `tag` is the badge shown on the live cards.
+Five projects. `tag` was the badge shown on the live site's old cards and is not shipped. KeySpace is listed last here but first in `lib/projects.ts` (data file is newest-first).
 
 ### 1. StitchLogic — `stitchlogic`
 
@@ -144,13 +146,28 @@ Four projects. `tag` is the badge shown on the live cards.
 - outcome: *Reduced stock tracking errors. Improved inventory visibility. Streamlined business operations.*
 - takeaway: *Developed expertise in transactional data management and inventory workflows.*
 
+### 5. KeySpace — `keyspace`
+
+Added by the owner **2026-11-15**; not on the 2026-11-13 live-site snapshot. `source` and `live` verified HTTP 200 on **2026-11-15**.
+
+- stack `Next.js, TypeScript, Node.js, PostgreSQL, TanStack Query, Stripe`
+- source `https://github.com/samibyte/key-space-client`
+- live `https://key-space-byte.vercel.app/`
+- tagline: *Find & List Rental Properties with Ease*
+- problem: *Rental property hunting and listing is fragmented, making it difficult for tenants and landlords to connect, manage rental requests, and complete payments in one place.*
+- solution: *Built a modern, responsive rental property marketplace with dedicated roles for Tenants, Landlords, and Admins. Tenants browse and submit rental requests with Stripe payments; Landlords list properties, manage availability, and approve or reject requests; Admins moderate users and monitor platform statistics.*
+- challenge: *Orchestrating a consistent rental state flow from request and approval to payment and activation, while verifying payments on the server with Stripe webhooks to prevent false payment confirmations.*
+- outcome: *Secured rental operations with JWT authentication, role-based access control, and ownership checks. Improved responsiveness by caching and synchronizing frequently changing server data with TanStack Query.*
+- takeaway: *Strengthened expertise in end-to-end transactional workflow design, Stripe webhook payment verification, and JWT-based role security. Gained practical experience building full-stack role-based marketplaces with real payment integration.*
+- role: *Full-Stack Web Developer*
+- architecture: *Browser (Next.js App Router) → Server (Node.js/Express) → Database (PostgreSQL via Prisma) → Auth (JWT with HTTP-only cookies)*
+- decision — title: *Custom JWT route proxy vs. Next.js middleware*; tradeoff: *Chose edge-friendly proxy.ts for dynamic fallback routing and HTTP-only cookie management over Next.js middleware to maintain full control over token refresh and role checks.*; changed: *Enabled route protection for /dashboard nested paths while preserving anonymous access to public property browsing.*
+
 ### Optional per-project fields
 
-`role`, `architecture` (ordered node labels) and `decision` (title / tradeoff / what changed) do **not** exist on the live site.
-`[USER: one line each per project — e.g. StitchLogic architecture: Browser → React SPA → Express API → MongoDB]`
-When absent the UI renders nothing: no "Coming soon", no empty box.
+`role`, `architecture` (ordered node labels) and `decision` (title / tradeoff / what changed) do **not** exist on the live site for projects 1–4. The owner chose **2026-11-15** to omit them rather than invent them; KeySpace carries the values the owner supplied. When absent the UI renders nothing: no "Coming soon", no empty box.
 
-All four projects say *Project Walkthrough — Coming Soon* on the live site. Do not build a video slot.
+All four live-site projects say *Project Walkthrough — Coming Soon*. Do not build a video slot.
 
 ---
 

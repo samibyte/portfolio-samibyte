@@ -24,7 +24,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P9.2 Evidence
 
 ## P7 Launch
-- [ ] P7.1 Resolve content slots
+- [x] P7.1 Resolve content slots
 - [ ] P7.2 SEO surface
 - [ ] P7.3 Deploy
 - [ ] P7.4 Evidence report
