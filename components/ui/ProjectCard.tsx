@@ -5,19 +5,7 @@ import { glass } from "@/lib/glass";
 
 export function ProjectCard({ project }: { project: Project }) {
   return (
-    <article
-      className={glass({
-        variant: "card",
-        tone: "regular",
-        interactive: true,
-        className:
-          "group relative flex h-full flex-col p-6 focus-within:border-[var(--text)]/40",
-      })}
-    >
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute -inset-0.5 rounded-2xl border border-[var(--text)]/40 opacity-0 group-hover:animate-ping group-focus-within:animate-ping motion-reduce:hidden"
-      />
+    <article className="group flex h-full flex-col border-t border-[var(--text)]/15 pt-6">
       <h3 className="font-[family-name:var(--font-display)] text-[length:var(--fs-2xl)] leading-tight text-[var(--text)]">
         <Link
           href={`/projects/${project.slug}`}
