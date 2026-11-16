@@ -2,8 +2,11 @@
 
 import { useEffect, useRef } from "react";
 import { content } from "@/lib/content";
-import { glass } from "@/lib/glass";
 import { onFrame, signal } from "@/lib/signal";
+import { SECTION_ZONE, ZONES } from "@/lib/zones";
+
+const SKILLS_ZONE =
+  ZONES.find((zone) => zone.id === SECTION_ZONE.skills) ?? ZONES[0];
 
 export function Skills() {
   const sectionRef = useRef<HTMLElement | null>(null);
@@ -94,41 +97,34 @@ export function Skills() {
       id="skills"
       data-zone="midnight"
       aria-labelledby="skills-title"
-      className="relative px-6 py-24"
+      className="relative px-6 py-[var(--station-pad)]"
     >
-      <div data-water-block className="mx-auto w-full max-w-6xl">
+      <div data-water-block className="mx-auto w-full max-w-[96rem]">
         <h2
           id="skills-title"
-          className="font-[family-name:var(--font-display)] text-[length:var(--fs-3xl)] leading-tight text-[var(--text)]"
+          className="font-[family-name:var(--font-display)] text-[length:var(--fs-display)] leading-[0.9] tracking-[var(--tracking-tight)] text-[var(--text)]"
         >
           Skills
         </h2>
-        <ul className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+
+        <p className="instrument mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[length:var(--fs-xs)] text-[var(--text)]">
+          <span
+            aria-hidden="true"
+            className="h-px w-8 shrink-0 bg-current opacity-30"
+          />
+          <span>{SKILLS_ZONE.label}</span>
+          <span>
+            {SKILLS_ZONE.metersFrom}–{SKILLS_ZONE.metersTo} M
+          </span>
+        </p>
+
+        <ul className="skill-fields">
           {content.skills.map((group) => (
-            <li key={group.title}>
-              <h3 className="text-[length:var(--fs-sm)] font-medium uppercase tracking-[0.2em] text-[var(--text)]/70">
-                {group.title}
-              </h3>
-              <ul className="mt-3 flex flex-wrap gap-2">
+            <li key={group.title} className="skill-group">
+              <h3 className="skill-group__label instrument">{group.title}</h3>
+              <ul className="skill-field">
                 {group.items.map((item) => (
-                  <li
-                    key={item}
-                    data-skill={item}
-                    style={{
-                      borderColor:
-                        "color-mix(in srgb, var(--text) calc(25% + var(--glow, 0) * 75%), transparent)",
-                      backgroundColor:
-                        "color-mix(in srgb, var(--accent) calc(var(--glow, 0) * 25%), transparent)",
-                      boxShadow:
-                        "var(--glass-shadow), 0 0 calc(var(--glow, 0) * 16px) color-mix(in srgb, var(--accent) calc(var(--glow, 0) * 40%), transparent)",
-                    }}
-                    className={glass({
-                      variant: "chip",
-                      tone: "clear",
-                      className:
-                        "px-3 py-1.5 text-[length:var(--fs-sm)] text-[var(--text)]",
-                    })}
-                  >
+                  <li key={item} data-skill={item} className="skill-node">
                     {item}
                   </li>
                 ))}
