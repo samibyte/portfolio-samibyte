@@ -831,3 +831,120 @@ body:not(:has(canvas:not(.fluid-glass__canvas):not([data-foreground-canvas]))) [
     animation: none;
   }
 }
+
+/* ── About: a sounding line (P10.7) ────────────────────────────────────────
+ * Prose stays on the water in one narrow measure; principles read as margin
+ * annotations; the journey hangs off a single vertical sounding line. Each
+ * stop's tick and depth readout are derived from the twilight zone bounds in
+ * lib/zones.ts. No card fill, border or shadow around any of it (D-208).
+ */
+.about__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: clamp(2.5rem, 6vw, 3.5rem);
+  margin-top: clamp(2rem, 5vw, 3rem);
+}
+
+.about__prose {
+  display: grid;
+  gap: 1.35rem;
+  max-width: var(--measure-body);
+}
+
+.about__prose p {
+  font-size: var(--fs-base);
+  line-height: var(--leading-body);
+  color: var(--text);
+}
+
+.about__annotations {
+  display: grid;
+  gap: 1.5rem;
+  align-content: start;
+  max-width: var(--measure-body);
+}
+
+.about__annotation-list {
+  display: grid;
+  gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.about__annotation h4 {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-size: var(--fs-lg);
+  color: var(--text);
+}
+
+.about__annotation p {
+  margin-top: 0.35rem;
+  font-size: var(--fs-sm);
+  line-height: var(--leading-body);
+  color: var(--text);
+}
+
+@media (min-width: 1024px) {
+  .about__body {
+    grid-template-columns: minmax(0, var(--measure-body)) minmax(12rem, 18rem);
+    column-gap: clamp(3rem, 7vw, 7rem);
+    align-items: start;
+  }
+
+  /* The annotations sit in the margin beside the prose under a single
+   * hairline — still no panel, fill or box. */
+  .about__annotations {
+    border-top: 1px solid color-mix(in srgb, var(--text) 16%, transparent);
+    padding-top: 1rem;
+  }
+}
+
+.about__journey {
+  margin-top: clamp(3rem, 8vw, 5rem);
+}
+
+.sounding-line {
+  --sounding-gutter: 2.25rem;
+  --sounding-axis: 0.35rem;
+  position: relative;
+  margin: 1.5rem 0 0;
+  padding: 0 0 0 var(--sounding-gutter);
+  list-style: none;
+}
+
+.sounding-line::before {
+  position: absolute;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  left: var(--sounding-axis);
+  width: 1px;
+  background: color-mix(in srgb, var(--text) 24%, transparent);
+  content: "";
+}
+
+.sounding-stop {
+  position: relative;
+  padding-bottom: clamp(2rem, 5vw, 3rem);
+}
+
+.sounding-stop:last-child {
+  padding-bottom: 0;
+}
+
+.sounding-stop::before {
+  position: absolute;
+  top: 0.45rem;
+  left: calc(var(--sounding-axis) - var(--sounding-gutter));
+  width: calc(var(--sounding-gutter) - var(--sounding-axis) - 0.4rem);
+  height: 1px;
+  background: color-mix(in srgb, var(--text) 45%, transparent);
+  content: "";
+}
+
+.sounding-stop__depth {
+  color: var(--text);
+  font-weight: 500;
+}

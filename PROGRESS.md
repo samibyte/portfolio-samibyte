@@ -31,7 +31,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P10.4 Water-aware blocks
 - [x] P10.5 Hero masthead (variant A)
 - [x] P10.6 Projects as strata
-- [ ] P10.7 About as a sounding line
+- [x] P10.7 About as a sounding line
 - [ ] P10.8 Skills as a field
 - [ ] P10.9 Contact beacon + closing readout
 - [ ] P10.10 Tune + evidence
