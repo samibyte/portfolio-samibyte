@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, type ReactNode } from "react";
 import { measure } from "@/lib/layout";
 import { signal, start, stop } from "@/lib/signal";
+import { ForegroundCanvas } from "./ForegroundCanvas";
 
 const OceanCanvas = dynamic(
   () => import("./OceanCanvas").then((mod) => mod.OceanCanvas),
@@ -65,6 +66,7 @@ export function OceanProvider({ children }: { children?: ReactNode }) {
   return (
     <>
       <OceanCanvas />
+      <ForegroundCanvas />
       {children}
     </>
   );

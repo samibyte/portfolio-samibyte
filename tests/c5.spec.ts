@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { test, expect } from "@playwright/test";
 
 // Match tests/c6.spec.ts: force an ANGLE GL backend so the WebGL2 probe
@@ -31,7 +33,49 @@ test.describe("C5: native scroll over one fixed canvas", () => {
       }
       const canvases = await page.locator("canvas[data-ocean-canvas]").count();
       expect(canvases).toBeLessThanOrEqual(1);
-      if (path === "/") expect(canvases).toBe(1);
+      if (path === "/") {
+        expect(canvases).toBe(1);
+        const ocean = page.locator("canvas[data-ocean-canvas]");
+        await expect(ocean).toHaveAttribute("aria-hidden", "true");
+        const oceanPointer = await ocean.evaluate(
+          (element) => getComputedStyle(element).pointerEvents,
+        );
+        expect(oceanPointer).toBe("none");
+      }
+
+      const environment = await page.evaluate(() => ({
+        coarse:
+          window.matchMedia("(pointer: coarse)").matches ||
+          window.innerWidth < 768,
+        reduced: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      }));
+      const foreground = page.locator("canvas[data-foreground-canvas]");
+
+      if (path === "/" && !environment.coarse && !environment.reduced) {
+        await page.waitForSelector("canvas[data-foreground-canvas]", {
+          timeout: 30_000,
+        });
+      }
+
+      const foregroundCount = await foreground.count();
+      expect(foregroundCount).toBeLessThanOrEqual(1);
+      expect(foregroundCount).toBe(
+        path === "/" && !environment.coarse && !environment.reduced ? 1 : 0,
+      );
+
+      if (foregroundCount === 1) {
+        await expect(foreground).toHaveAttribute("aria-hidden", "true");
+        const pointerEvents = await foreground.evaluate(
+          (element) => getComputedStyle(element).pointerEvents,
+        );
+        expect(pointerEvents).toBe("none");
+
+        // The foreground layer is 2D: asking it for WebGL must return null.
+        const webgl = await foreground.evaluate(
+          (element) => (element as HTMLCanvasElement).getContext("webgl2"),
+        );
+        expect(webgl).toBeNull();
+      }
     });
 
     test(`${path} — a real wheel event is not defaultPrevented`, async ({
@@ -70,4 +114,14 @@ test.describe("C5: native scroll over one fixed canvas", () => {
       ).toBe(false);
     });
   }
+
+  test("foreground atmosphere adds no second animation loop", () => {
+    const source = readFileSync(
+      join(process.cwd(), "components/ocean/ForegroundCanvas.tsx"),
+      "utf8",
+    );
+
+    expect(source).not.toMatch(/\brequestAnimationFrame\s*\(/);
+    expect(source).toMatch(/\bonFrame\b/);
+  });
 });

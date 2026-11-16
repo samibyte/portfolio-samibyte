@@ -35,7 +35,7 @@ test.describe("P8 Look: Composition & Evidence", () => {
     // Make DOM overlays transparent so we measure pure canvas pixels without changing layout
     await page.addStyleTag({
       content:
-        "header, nav, main, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+        "header, nav, main, [data-foreground-canvas], [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
     });
     await page.waitForTimeout(100);
 
@@ -177,7 +177,7 @@ test.describe("P8 Look: Composition & Evidence", () => {
 
     await page.addStyleTag({
       content:
-        "header, nav, main, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+        "header, nav, main, [data-foreground-canvas], [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
     });
     await page.waitForTimeout(100);
 
@@ -225,7 +225,7 @@ test.describe("P8 Look: Composition & Evidence", () => {
 
     await page.addStyleTag({
       content:
-        "header, nav, main, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+        "header, nav, main, [data-foreground-canvas], [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
     });
     await page.waitForTimeout(100);
 
@@ -280,7 +280,7 @@ test.describe("P8 Look: Composition & Evidence", () => {
 
     await page.addStyleTag({
       content:
-        "header, nav, main, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+        "header, nav, main, [data-foreground-canvas], [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
     });
     await page.waitForTimeout(100);
 
@@ -345,7 +345,7 @@ test.describe("P8 Look: Composition & Evidence", () => {
 
     await page.addStyleTag({
       content:
-        "header, nav, main, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+        "header, nav, main, [data-foreground-canvas], [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
     });
     await page.waitForTimeout(100);
 
@@ -426,10 +426,11 @@ test.describe("P8 Look: Composition & Evidence", () => {
     await page.waitForLoadState("load");
     const canvas = page.locator("canvas[data-ocean-canvas]");
     await canvas.waitFor({ state: "attached" });
+    await expect(canvas).toHaveCSS("opacity", "1", { timeout: 60_000 });
     await page.waitForTimeout(600);
     await page.addStyleTag({
       content:
-        "header, nav, main, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+        "header, nav, main, [data-foreground-canvas], [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
     });
     await page.waitForTimeout(100);
 
@@ -495,7 +496,7 @@ test.describe("P8 Look: Composition & Evidence", () => {
     await page.waitForTimeout(600);
     await page.addStyleTag({
       content:
-        "header, nav, main, aside, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+        "header, nav, main, aside, [data-foreground-canvas], [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
     });
     await page.waitForTimeout(100);
 
@@ -562,7 +563,7 @@ test.describe("P8 Look: Composition & Evidence", () => {
     await page.waitForTimeout(600);
     await page.addStyleTag({
       content:
-        "header, nav, main, aside, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+        "header, nav, main, aside, [data-foreground-canvas], [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
     });
     await page.waitForTimeout(100);
 
@@ -598,7 +599,7 @@ test.describe("P8 Look: Composition & Evidence", () => {
     await page.waitForTimeout(600);
     await page.addStyleTag({
       content:
-        "header, nav, main, aside, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+        "header, nav, main, aside, [data-foreground-canvas], [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
     });
     await page.waitForTimeout(100);
 
@@ -747,7 +748,7 @@ test.describe("P8 Look: Composition & Evidence", () => {
     await page.waitForTimeout(600);
     await page.addStyleTag({
       content:
-        "header, nav, main, aside, [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+        "header, nav, main, aside, [data-foreground-canvas], [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
     });
     await page.waitForTimeout(100);
 
@@ -777,5 +778,79 @@ test.describe("P8 Look: Composition & Evidence", () => {
     const changed = diffRatio(staticA, staticB, undefined, 0);
     console.log(`Tier 3 static: changed pixel ratio after 600ms = ${changed}`);
     expect(changed).toBe(0);
+  });
+
+  // ── P10.3 Foreground atmosphere ─────────────────────────────────────────────
+
+  test("P10.3 foreground atmosphere: present at tier 0, absent at tier 1 and after context loss", async ({
+    page,
+    isMobile,
+  }) => {
+    await page.addInitScript(() => {
+      (
+        window as unknown as { __oceanDebug?: { tier?: number } }
+      ).__oceanDebug = { tier: 0 };
+    });
+
+    await page.goto("/");
+    await page.waitForLoadState("load");
+
+    const foreground = page.locator("canvas[data-foreground-canvas]");
+
+    if (isMobile) {
+      // Coarse pointer and tier 2 never mount the foreground layer.
+      await page.waitForTimeout(500);
+      await expect(foreground).toHaveCount(0);
+      return;
+    }
+
+    await expect(foreground).toHaveCount(1, { timeout: 30_000 });
+    await expect(foreground).toHaveAttribute("aria-hidden", "true");
+
+    const pointerEvents = await foreground.evaluate(
+      (element) => getComputedStyle(element).pointerEvents,
+    );
+    expect(pointerEvents).toBe("none");
+
+    // 2D only: no second WebGL context is created.
+    const webgl = await foreground.evaluate(
+      (element) => (element as HTMLCanvasElement).getContext("webgl2"),
+    );
+    expect(webgl).toBeNull();
+
+    // Tier 1 must not mount the layer.
+    await page.evaluate(() => {
+      (
+        window as unknown as { __oceanDebug?: { tier?: number } }
+      ).__oceanDebug = { tier: 1 };
+    });
+    await expect(foreground).toHaveCount(0, { timeout: 10_000 });
+
+    // Back at tier 0 the bounded canvas may return.
+    await page.evaluate(() => {
+      (
+        window as unknown as { __oceanDebug?: { tier?: number } }
+      ).__oceanDebug = { tier: 0 };
+    });
+    await expect(foreground).toHaveCount(1, { timeout: 10_000 });
+
+    // A lost 2D context removes the canvas and does not remount it.
+    await foreground.evaluate((element) => {
+      element.dispatchEvent(new Event("contextlost"));
+    });
+    await expect(foreground).toHaveCount(0, { timeout: 10_000 });
+
+    await page.evaluate(() => {
+      (
+        window as unknown as { __oceanDebug?: { tier?: number } }
+      ).__oceanDebug = { tier: 1 };
+    });
+    await page.evaluate(() => {
+      (
+        window as unknown as { __oceanDebug?: { tier?: number } }
+      ).__oceanDebug = { tier: 0 };
+    });
+    await page.waitForTimeout(300);
+    await expect(foreground).toHaveCount(0);
   });
 });

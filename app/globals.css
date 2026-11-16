@@ -191,6 +191,21 @@ body:not(:has(canvas:not(.fluid-glass__canvas))) [data-zone="surface"] {
   );
 }
 
+/* ── Foreground atmosphere: bounded 2D canvas (P10.3 / D-211) ───────────────
+ * Above <main> (z-1) and below the dock/chrome (z-20). It is pointer-
+ * transparent, aria-hidden, and never owns an animation loop: the component
+ * in components/ocean/ForegroundCanvas.tsx draws from lib/signal.ts only.
+ */
+[data-foreground-canvas] {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
 /* ── Closing band: FluidGlass mark (components/ui/FluidGlass.tsx) ──────────── */
 .fluid-glass {
   position: relative;
