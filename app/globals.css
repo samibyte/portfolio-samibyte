@@ -600,3 +600,177 @@ body:not(:has(canvas:not(.fluid-glass__canvas))) [data-zone="surface"] {
     transition: none !important;
   }
 }
+
+/* ── Hero masthead, variant A (P10.5 / D-210) ──────────────────────────────
+ * Real HTML text split per letter. The above copy is the C4-measured text;
+ * the submerged sliver and the mirrored reflection are decorative. Both
+ * copies live in full-hero wrappers with a fixed clip-path, so the letter
+ * translations from lib/signal.ts emerge above or sink below the waterline.
+ */
+:root {
+  --submerge: clamp(8px, 1.6vw, 20px);
+}
+
+.masthead {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.masthead__copy {
+  position: absolute;
+  inset: 0;
+}
+
+.masthead__above {
+  clip-path: inset(0 0 70% 0);
+}
+
+.masthead__below {
+  clip-path: inset(30% 0 0 0);
+}
+
+.masthead__reflection {
+  opacity: 0.15;
+  filter: blur(2px);
+}
+
+.masthead__word {
+  position: absolute;
+  left: 3.5rem;
+  right: 0.75rem;
+  /* `bottom` is measured from the container's bottom edge, so the word box
+   * bottom edge lands at 30% + --submerge (D-210). */
+  bottom: calc(70% - var(--submerge));
+  display: flex;
+  align-items: flex-end;
+  gap: 0.18em;
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-display, Georgia, serif);
+  font-size: clamp(6rem, 16vw, 15rem);
+  font-weight: 400;
+  line-height: 0.88;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+  .masthead__word {
+    left: 4.5rem;
+    right: 0.5rem;
+  }
+}
+
+.masthead__word-part {
+  display: inline-flex;
+  align-items: flex-end;
+}
+
+.masthead__letter {
+  display: inline-block;
+  animation: masthead-in 520ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--letter-index, 0) * 40ms);
+}
+
+.masthead__above .masthead__word {
+  transform: perspective(900px) rotateY(var(--masthead-tilt, 0deg));
+}
+
+.masthead__above .masthead__word,
+.masthead__below .masthead__word {
+  text-shadow:
+    2px 2px 0 currentColor,
+    4px 4px 0 currentColor,
+    6px 6px 0 currentColor,
+    8px 8px 0 currentColor,
+    10px 10px 0 currentColor,
+    12px 12px 0 currentColor;
+}
+
+.masthead__below .masthead__word {
+  color: color-mix(in srgb, var(--text) 92%, #1f8a80 8%);
+  filter: blur(0.5px);
+  transform: scaleX(1.01);
+}
+
+.masthead__reflection .masthead__word {
+  bottom: 70%;
+  transform: scaleY(-1);
+  transform-origin: bottom;
+  mask-image: linear-gradient(to top, rgb(0 0 0 / 0.9), transparent 8vh);
+}
+
+@media (max-width: 767px) {
+  .masthead__word {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    font-size: 20vw;
+    line-height: 0.9;
+  }
+}
+
+@media (pointer: coarse), (max-width: 767px) {
+  .masthead__above .masthead__word,
+  .masthead__below .masthead__word {
+    text-shadow:
+      3px 3px 0 currentColor,
+      6px 6px 0 currentColor,
+      9px 9px 0 currentColor,
+      12px 12px 0 currentColor;
+  }
+}
+
+@keyframes masthead-in {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* Hero instrument line in the sky and the copy below the waterline. */
+.hero-role {
+  position: absolute;
+  left: 3.5rem;
+  right: 1.5rem;
+  top: clamp(1rem, 3vh, 3rem);
+  color: var(--text);
+}
+
+.hero-copy {
+  position: absolute;
+  left: 3.5rem;
+  right: clamp(1.5rem, 6vw, 6rem);
+  top: calc(30% + var(--submerge) + clamp(2.5rem, 7vh, 4rem));
+  max-width: 46ch;
+}
+
+.buoy-chip::after {
+  position: absolute;
+  top: calc(100% + 1px);
+  left: 50%;
+  width: 1px;
+  height: clamp(1.5rem, 5vh, 3rem);
+  background: color-mix(in srgb, var(--text) 45%, transparent);
+  content: "";
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .hero-role,
+  .hero-copy {
+    left: 4.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .masthead__letter {
+    animation: none;
+  }
+}

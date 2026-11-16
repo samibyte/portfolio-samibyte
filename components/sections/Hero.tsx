@@ -1,6 +1,7 @@
 import { content } from "@/lib/content";
 import { glass } from "@/lib/glass";
 import { BuoyChip } from "@/components/ui/BuoyChip";
+import { Masthead } from "@/components/sections/Masthead";
 
 export function Hero() {
   return (
@@ -11,21 +12,16 @@ export function Hero() {
       className="relative h-[calc(var(--vh)*100)] overflow-hidden"
     >
       <BuoyChip />
-      <div className="absolute inset-x-0 top-[30%] -translate-y-1/2 px-6">
-        <div data-water-block className="mx-auto w-full max-w-6xl">
-          <p className="text-[length:var(--fs-xs)] uppercase tracking-[0.25em] text-[var(--text)]/70">
-            {content.role} · {content.location}
-          </p>
-          <h1
-            id="hero-title"
-            className="mt-3 max-w-3xl font-[family-name:var(--font-display)] text-[length:var(--fs-4xl)] leading-[1.05] text-[var(--text)]"
-          >
-            {content.name}
-          </h1>
-          <p className="mt-5 max-w-xl text-[length:var(--fs-lg)] leading-relaxed text-[var(--text)]">
+      <p className="hero-role instrument text-[length:var(--fs-xs)] text-[var(--text)]">
+        {content.role} · {content.location}
+      </p>
+      <Masthead />
+      <div className="hero-copy">
+        <div data-water-block>
+          <p className="max-w-[var(--measure-body)] text-[length:var(--fs-lg)] leading-[var(--leading-body)] text-[var(--text)]">
             {content.hero.intro}
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-6 flex flex-wrap gap-3 sm:mt-8">
             {content.hero.ctas.map((cta) => {
               const external = cta.href.startsWith("http");
               return (

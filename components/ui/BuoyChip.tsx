@@ -68,7 +68,7 @@ export function BuoyChip() {
         variant: "chip",
         tone: "regular",
         className:
-          "absolute top-[calc(var(--vh)*30)] right-6 md:right-12 lg:right-24 -mt-4 z-10 hidden md:inline-flex items-center gap-2 px-3.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-[var(--text)] motion-reduce:hidden",
+          "buoy-chip absolute top-[calc(var(--vh)*30)] right-6 md:right-12 lg:right-24 -mt-4 z-10 hidden md:inline-flex items-center gap-2 px-3.5 py-1.5 text-[length:var(--fs-xs)] font-medium text-[var(--text)] motion-reduce:hidden",
       })}
     >
       <span className="relative flex h-2 w-2">
