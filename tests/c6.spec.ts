@@ -449,6 +449,68 @@ test.describe("P6.5: accessibility pass", () => {
   });
 });
 
+test.describe("P10.6: projects as strata", () => {
+  test("rows fill the list, both project links resolve, and architecture expands on focus", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
+    const rows = page.locator("#projects [data-project]");
+    await expect(rows).toHaveCount(5);
+
+    // No card grid: every row spans the full width of the project list.
+    const widths = await page.locator("#projects ol").evaluate((list) => {
+      const listWidth = list.getBoundingClientRect().width;
+      return Array.from(
+        list.querySelectorAll<HTMLElement>("[data-project]"),
+      ).map((row) => ({
+        listWidth,
+        rowWidth: row.getBoundingClientRect().width,
+      }));
+    });
+    for (const { listWidth, rowWidth } of widths) {
+      expect(rowWidth).toBeGreaterThanOrEqual(listWidth - 1);
+    }
+
+    // Both links into the first case study survive the rebuild.
+    const first = rows.first();
+    await expect(first.locator("h3 a")).toHaveAttribute(
+      "href",
+      "/projects/keyspace",
+    );
+    await expect(
+      first.getByRole("link", { name: "Read case study" }),
+    ).toHaveAttribute("href", "/projects/keyspace");
+
+    // The architecture is inline and revealed by keyboard focus.
+    const architecture = first.locator(
+      'figure[aria-label="Architecture diagram"]',
+    );
+    await expect(architecture).toBeHidden();
+    await first.locator("h3 a").focus();
+    await expect(architecture).toBeVisible();
+
+    // The station plate is sticky only where the two-column strata grid runs.
+    if ((page.viewportSize()?.width ?? 0) >= 768) {
+      await page.locator("#projects").evaluate((section) => {
+        window.scrollTo(0, (section as HTMLElement).offsetTop + 420);
+      });
+      await page.waitForTimeout(60);
+      const plate = page.locator('#projects [data-station="projects"]');
+      const firstTop = await plate.evaluate(
+        (node) => node.getBoundingClientRect().top,
+      );
+      await page.evaluate(() => window.scrollBy(0, 200));
+      await page.waitForTimeout(60);
+      const secondTop = await plate.evaluate(
+        (node) => node.getBoundingClientRect().top,
+      );
+      expect(Math.abs(secondTop - firstTop)).toBeLessThanOrEqual(1);
+    }
+  });
+});
+
 test.describe("C6: Projects, Resume and Contact reachable without scrolling", () => {
   for (const suffix of ["", "?fx=off"]) {
     const mode = suffix === "" ? "effects on" : "?fx=off";

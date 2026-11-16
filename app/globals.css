@@ -601,6 +601,59 @@ body:not(:has(canvas:not(.fluid-glass__canvas):not([data-foreground-canvas]))) [
   }
 }
 
+/* ── Projects: strata rows (P10.6) ─────────────────────────────────────────
+ * Full-width rows on the water: a large decorative numeral, the display
+ * title, the tagline and a mono stack. The only rule is a hairline between
+ * strata; there is no card fill, border or shadow around project content
+ * (D-208 / D-217). The numeral is decorative and aria-hidden.
+ */
+.strata-row {
+  border-top: 1px solid color-mix(in srgb, var(--text) 16%, transparent);
+}
+
+/* The station plate is the only instrument in the section. The standard
+ * `strong` fill is 52%; a small mono label first peeks over the near-black
+ * near-field water, so this plate raises the zone-aware fill to 62%. Text
+ * stays `var(--text)` and the fill still mixes from the zone's own `--bg-top`. */
+.strata-plate {
+  --glass-fill: 62%;
+}
+
+.strata-numeral {
+  font-family: var(--font-display, Georgia, serif);
+  font-size: clamp(2.75rem, 8vw, 7rem);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.78;
+  letter-spacing: -0.04em;
+  color: color-mix(in srgb, var(--text) 32%, transparent);
+  user-select: none;
+}
+
+.strata-stack {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 0.375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.strata-stack li {
+  display: inline-flex;
+  align-items: center;
+}
+
+.strata-stack li + li::before {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: 0.85em;
+  margin-inline: 0.75em;
+  background: color-mix(in srgb, var(--text) 45%, transparent);
+}
+
 /* ── Hero masthead, variant A (P10.5 / D-210) ──────────────────────────────
  * Real HTML text split per letter. The above copy is the C4-measured text;
  * the submerged sliver and the mirrored reflection are decorative. Both

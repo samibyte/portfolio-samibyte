@@ -33,7 +33,7 @@ export function Architecture({ nodes }: { nodes?: string[] }) {
 
   return (
     <figure
-      className="mt-8 overflow-x-auto pb-2"
+      className="mt-6 overflow-x-auto pb-2"
       tabIndex={0}
       role="group"
       aria-label="Architecture diagram"
@@ -44,7 +44,7 @@ export function Architecture({ nodes }: { nodes?: string[] }) {
         width={width}
         height={NODE_H}
         viewBox={`0 0 ${width} ${NODE_H}`}
-        className="h-20 w-auto max-w-none text-[var(--text)]"
+        className="h-20 w-auto max-w-none text-[var(--text)] md:h-auto md:w-full"
       >
         {nodes.map((node, index) => {
           const x = index * (NODE_W + GAP);
