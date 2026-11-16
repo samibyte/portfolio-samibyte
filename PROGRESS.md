@@ -29,7 +29,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P10.2 Environment bridge
 - [x] P10.3 Foreground atmosphere canvas
 - [x] P10.4 Water-aware blocks
-- [ ] P10.5 Hero masthead (variant A)
+- [x] P10.5 Hero masthead (variant A)
 - [ ] P10.6 Projects as strata
 - [ ] P10.7 About as a sounding line
 - [ ] P10.8 Skills as a field
@@ -44,4 +44,4 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [ ] P7.5 Final gate
 
 ## Blockers
-- P10.5 desktop C4 and C6 focus checks time out at 30 s: `npx playwright test tests/c4.spec.ts --project=chromium-desktop --workers=1` (`Test timeout of 30000ms exceeded.`) and `npx playwright test tests/c6.spec.ts --project=chromium-desktop --grep "Tab pass" --workers=1` (`Test timeout of 30000ms exceeded.`). Gate and task-specific masthead tests pass; P10.5 remains unchecked pending the desktop checks.
+None.
