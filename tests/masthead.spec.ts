@@ -136,6 +136,55 @@ test.describe("P10.5 hero masthead (variant A)", () => {
     expect(layout.actionsBottom).toBeLessThan(layout.vh * 0.75);
   });
 
+  test("hero title and copy are centered in the dock-safe frame", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
+    const alignment = await page.evaluate(() => {
+      const role = document.querySelector<HTMLElement>(".hero-role");
+      const copy = document.querySelector<HTMLElement>(".hero-copy");
+      const letters = Array.from(
+        document.querySelectorAll<HTMLElement>(
+          '[data-masthead="above"] [data-letter]',
+        ),
+      );
+      if (!role || !copy || letters.length === 0) return null;
+
+      const roleRect = role.getBoundingClientRect();
+      const copyRect = copy.getBoundingClientRect();
+      const textLeft = Math.min(
+        ...letters.map((letter) => letter.getBoundingClientRect().left),
+      );
+      const textRight = Math.max(
+        ...letters.map((letter) => letter.getBoundingClientRect().right),
+      );
+      const viewportCenter = window.innerWidth / 2;
+
+      return {
+        roleCenter: roleRect.left + roleRect.width / 2,
+        copyCenter: copyRect.left + copyRect.width / 2,
+        titleCenter: (textLeft + textRight) / 2,
+        viewportCenter,
+        viewportWidth: window.innerWidth,
+      };
+    });
+
+    expect(alignment).not.toBeNull();
+    if (!alignment) return;
+
+    expect(
+      Math.abs(alignment.roleCenter - alignment.viewportCenter),
+    ).toBeLessThanOrEqual(1);
+    expect(
+      Math.abs(alignment.copyCenter - alignment.viewportCenter),
+    ).toBeLessThanOrEqual(1);
+    expect(
+      Math.abs(alignment.titleCenter - alignment.viewportCenter),
+    ).toBeLessThanOrEqual(alignment.viewportWidth * 0.02);
+  });
+
   test("per-letter bob runs on the shared loop", async ({ page }) => {
     await page.addInitScript(() => {
       (window as unknown as { __oceanDebug?: { tier?: number } }).__oceanDebug = {
