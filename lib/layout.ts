@@ -2,9 +2,25 @@ import { bgAt, metersAt, setSectionOffsets, type SectionOffset } from "./zones";
 import type { ZoneId } from "./types";
 
 let cachedSections: SectionOffset[] = [];
+let cachedBlocks: WaterBlock[] = [];
 let mainObserver: ResizeObserver | null = null;
 let rafId: number | null = null;
 let observedElement: HTMLElement | null = null;
+
+/** Maximum keep-out rects the shader accepts (constant loop bound `uBlocks[8]`). */
+export const MAX_WATER_BLOCKS = 8;
+
+/** A `[data-water-block]` body-copy rect, cached in page space (P10.4). */
+export interface WaterBlock {
+  /** Left edge as a fraction of viewport width. */
+  x0: number;
+  /** Right edge as a fraction of viewport width. */
+  x1: number;
+  /** Page-space top edge, px. */
+  pageTop: number;
+  /** Page-space bottom edge, px. */
+  pageBottom: number;
+}
 
 function scheduleMeasure(): void {
   if (typeof window === "undefined") return;
@@ -60,7 +76,29 @@ export function measure(): SectionOffset[] {
   });
 
   setSectionOffsets(cachedSections);
+
+  const vw = window.innerWidth || 1;
+  cachedBlocks = Array.from(
+    document.querySelectorAll<HTMLElement>("[data-water-block]"),
+  )
+    .slice(0, MAX_WATER_BLOCKS)
+    .map((el) => {
+      const rect = el.getBoundingClientRect();
+      return {
+        x0: rect.left / vw,
+        x1: rect.right / vw,
+        pageTop: rect.top + scrollY,
+        pageBottom: rect.bottom + scrollY,
+      };
+    })
+    .filter((block) => block.x1 > block.x0 && block.pageBottom > block.pageTop);
+
   return cachedSections;
+}
+
+/** Cached body-copy keep-out rects, in document order (P10.4). */
+export function waterBlocks(): readonly WaterBlock[] {
+  return cachedBlocks;
 }
 
 export function sections(): readonly SectionOffset[] {
@@ -120,4 +158,5 @@ export function disconnectLayout(): void {
   mainObserver?.disconnect();
   mainObserver = null;
   observedElement = null;
+  cachedBlocks = [];
 }

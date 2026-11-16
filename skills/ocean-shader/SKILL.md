@@ -35,6 +35,13 @@ Check them in that order, then set `uDebug` and render the intermediate value.
 - **Plunge is analytic** from `uPlunge`. No second canvas, no DOM particles.
 - **Smooth, never hard-switch**, between zones: `smoothstep` across the gap.
 
+## Keep-out blocks (P10.4)
+
+- Up to 8 `[data-water-block]` rects are cached by `lib/layout.ts` (`measure()`/`waterBlocks()`), then uploaded each frame as `uBlocks[8]` (plain nested array, mutated in place) plus `uBlockCount`. `OceanCanvas` converts the cached page-space rects to screen uv; `uBlockCount` is 0 at tier >= 2.
+- `blockField(vUv)` is an analytic rect SDF with **zero noise taps**. It dims and deflects near particles and fauna and draws the water meniscus lip. `uDebug == 19` outputs the field.
+- Never pay a noise tap for the keep-out; the loop bound stays the literal 8.
+- Keep-out uses screen space (`vUv`), never the displaced colour sample, so the rect stays on its DOM box.
+
 ## Compile-safety checklist
 
 - [ ] `precision highp float;` is the first line of the fragment shader.
@@ -57,5 +64,5 @@ If a layer drops below 45 fps, reduce its loop count before cutting the layer �
 - [ ] Gate uniform at 0 and at full strength produces a visible difference.
 - [ ] No GLSL compile warning or console error.
 - [ ] The mask is computed from undisplaced `vUv`; the waterline still measures 30% at scroll 0 (`tests/c1.spec.ts`).
-- [ ] `window.__oceanDebug.layer` isolates the new layer using the P8 codes (`11`–`18`).
+- [ ] `window.__oceanDebug.layer` isolates the new layer using the P8 codes (`11`–`18`, `19` = keep-out).
 - [ ] `npm run gate` passes and the task's Playwright checks pass.

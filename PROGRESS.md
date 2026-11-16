@@ -28,7 +28,7 @@ Detail for each ID lives in `phases/P<n>.md` under `## <ID> <title>` — if `nex
 - [x] P10.1 Type contract + glass scope
 - [x] P10.2 Environment bridge
 - [x] P10.3 Foreground atmosphere canvas
-- [ ] P10.4 Water-aware blocks
+- [x] P10.4 Water-aware blocks
 - [ ] P10.5 Hero masthead (variant A)
 - [ ] P10.6 Projects as strata
 - [ ] P10.7 About as a sounding line

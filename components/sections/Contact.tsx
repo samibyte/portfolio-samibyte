@@ -22,7 +22,7 @@ export function Contact() {
         />
       </div>
 
-      <div className="mx-auto grid w-full max-w-6xl gap-12 lg:grid-cols-2">
+      <div data-water-block className="mx-auto grid w-full max-w-6xl gap-12 lg:grid-cols-2">
         <div>
           <h2
             id="contact-title"

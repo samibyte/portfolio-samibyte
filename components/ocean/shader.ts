@@ -31,7 +31,9 @@ uniform float uFauna;        // 1.0 = on, 0.0 = off (P8.4 schema)
 uniform float uCamera;       // 1.0 = on, 0.0 = off (P8.4 schema)
 uniform vec4  uFaunaConfig;  // schools, jellies, alpha, (unused) (P8.5)
 uniform vec4  uGrade;        // vignette, grain, driftX, rollRad (P8.6), gated by uCamera
-uniform int   uDebug;        // 0 = off, 1 = under mask, 11 = sky+surface, 12 = refraction, 13 = caustics, 14 = rays, 15 = particles, 16 = fauna, 17 = grade
+uniform vec4  uBlocks[8];    // body-copy keep-out rects: x0, y0, x1, y1 in uv, y up (P10.4)
+uniform float uBlockCount;   // active keep-out rects; 0 at tier >= 2 (P10.4)
+uniform int   uDebug;        // 0 = off, 1 = under mask, 11 = sky+surface, 12 = refraction, 13 = caustics, 14 = rays, 15 = particles, 16 = fauna, 17 = grade, 19 = keep-out field
 
 varying vec2 vUv;
 
@@ -43,6 +45,7 @@ varying vec2 vUv;
 //   particle flutter ..... 1   (P8.4: snow layer replacement, behind uFx.z gate)
 //   caustics, glow ....... 0   (analytic lattice / sine wander)
 //   grade / grain ........ 0   (P8.6: hash speckle, not a noise() tap)
+//   keep-out blocks ...... 0   (P10.4: analytic rect SDF, no noise)
 //   total ............... 11
 // P8.3 trade: the caustic noise warp and the glow wander are gone, the bubble
 // wobble reuses the flow sample, and that pays for the two refraction taps.
@@ -52,7 +55,9 @@ varying vec2 vUv;
 // refraction skew 0.7 / 0.6, ray fan step 0.08, ray phase step 1.618,
 // ray flicker rate 3.0, caustic lattice skew 1.2 / 0.3, water fbm scale 2.5 / 1.5,
 // particle sizes 0.0022 / 0.0055 / 0.05 / 0.016, near alpha 0.24,
-// vignette corner edges x 0.86 / y 0.78, grain lattice 640, grain rate 30.
+// vignette corner edges x 0.86 / y 0.78, grain lattice 640, grain rate 30,
+// P10.4 keep-out: rim reach 0.045, core edge 0.004, push reach 0.06,
+// push amount 0.035, block dim 0.85, meniscus lift 0.06.
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 
@@ -160,6 +165,33 @@ vec3 bgAt(float y) {
   return c;
 }
 
+// P10.4 keep-out field: analytic distance to the union of up to 8 body-copy
+// rects. Returns (inside coverage, meniscus rim, outward push x, outward push y).
+// No noise taps; the loop bound is the literal 8 and uBlockCount gates it.
+vec4 blockField(vec2 p) {
+  float inside = 0.0;
+  float rim = 0.0;
+  vec2 push = vec2(0.0);
+  for (int i = 0; i < 8; i++) {
+    if (float(i) >= uBlockCount) break;
+    vec4 b = uBlocks[i];
+    vec2 c = (b.xy + b.zw) * 0.5;
+    vec2 h = (b.zw - b.xy) * 0.5;
+    vec2 d = abs(p - c) - h;
+    float sd = length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+
+    float core = 1.0 - smoothstep(-0.004, 0.004, sd);
+    inside = max(inside, core);
+    rim = max(rim, smoothstep(-0.004, 0.0, sd) * (1.0 - smoothstep(0.0, 0.045, sd)));
+
+    vec2 away = p - clamp(p, b.xy, b.zw);
+    float len = length(away);
+    float reach = 1.0 - smoothstep(0.0, 0.06, max(0.0, sd));
+    push += (len > 0.0001 ? away / len : vec2(0.0)) * reach;
+  }
+  return vec4(inside, rim, push);
+}
+
 void main() {
   float t = uTime;
 
@@ -224,6 +256,16 @@ void main() {
                      camSin * camLocal.x + camCos * camLocal.y) - camLocal;
   vec2 camShift = (vec2(sin(t * 0.031) * uGrade.z, 0.0) + camRot) * uCamera;
   uv += camShift;
+
+  // 3c. Keep-out field (P10.4): body-copy rects from lib/layout.ts, in screen
+  //     space (vUv, not the displaced colour sample). Dims/deflects near
+  //     particles and fauna, and draws the meniscus edge below.
+  vec4 kf = blockField(vUv);
+  if (uDebug == 19) {
+    // Keep-out isolation: core + meniscus rim; black when uBlockCount = 0.
+    gl_FragColor = vec4(vec3(clamp(kf.x + kf.y, 0.0, 1.0)), 1.0);
+    return;
+  }
 
   // 3. Sky (30%): gradient, cloud ranks, sun.
   vec3 sky = skyLayer(vUv + camShift, wl, t);
@@ -397,6 +439,8 @@ void main() {
 
     // 3. Near particles: 4 large soft blurred discs, 1.8x scroll, alpha <= 0.25. Constant bound 6.
     // Discs kept away from x=1% boundary (C1 step runner-up guard).
+    // P10.4: keep-out rects deflect them outward and dim their core.
+    vec2 nearUv = uv - kf.zw * 0.035;
     for (int i = 0; i < 6; i++) {
       if (float(i) >= uParticle.z) break;
       float fi = float(i);
@@ -405,12 +449,12 @@ void main() {
       float h3 = hash(vec2(fi * 4.43 + 0.91, fi * 1.87 + 0.47));
       float px = 0.15 + 0.70 * fract(h1 + sin(t * 0.25 + h3 * 6.28) * 0.02 + flutter * 1.5);
       float py = fract(0.12 + 0.60 * h2 + t * 0.035 + scroll * 1.8);
-      vec2 d = vec2(fract(uv.x - px + 0.5) - 0.5, fract(uv.y - py + 0.5) - 0.5) * vec2(uAspect, 1.0);
+      vec2 d = vec2(fract(nearUv.x - px + 0.5) - 0.5, fract(nearUv.y - py + 0.5) - 0.5) * vec2(uAspect, 1.0);
       float dist = length(d);
       float r = 0.048 + 0.014 * h3;
       // Soft blurred disc bokeh, peak alpha <= 0.24 (strictly <= 0.25)
       float disc = smoothstep(r, r * 0.15, dist) * 0.24;
-      partAcc += disc;
+      partAcc += disc * (1.0 - kf.x * 0.85);
     }
 
     // 4. Droplets: 3 lens-wet droplets/streaks, moving opposite to scroll. Constant bound 4.
@@ -460,6 +504,8 @@ void main() {
 
     vec3 waterLocal = bgAt(vUv.y);
     float faunaAcc = 0.0;
+    // P10.4: keep-out rects deflect fauna outward and dim their core.
+    vec2 faunaUv = uv - kf.zw * 0.035;
 
     // ── Fish schools (5): soft ellipse SDFs with tail wiggle. ──────────
     for (int i = 0; i < 5; i++) {
@@ -479,7 +525,7 @@ void main() {
       float py = 0.32 + 0.36 * h2 + sin(t * 0.07 + fi * 1.9) * 0.015;
       py = clamp(py, 0.33, 0.68);  // keep in water upper half
 
-      vec2 d = (uv - vec2(px, py)) * vec2(uAspect, 1.0);
+      vec2 d = (faunaUv - vec2(px, py)) * vec2(uAspect, 1.0);
       // Ellipse SDF: horizontal stretch 2.5× for fish-school shape.
       float ellD = length(vec2(d.x / 2.5, d.y));
       float r = 0.022 + 0.010 * h4;
@@ -505,7 +551,7 @@ void main() {
       float py = 0.40 + 0.25 * h2 + sin(t * 0.05 + fi * 2.7) * 0.018;
       py = clamp(py, 0.42, 0.72);
 
-      vec2 d = (uv - vec2(px, py)) * vec2(uAspect, 1.0);
+      vec2 d = (faunaUv - vec2(px, py)) * vec2(uAspect, 1.0);
       // Bell: half-disc (dome up, flat bottom).
       float bellR = 0.038;
       float bellD = length(d);
@@ -531,7 +577,7 @@ void main() {
       faunaAcc += (dome * 0.9 + rim * 0.5 + tentacles) * faunaFog;
     }
 
-    faunaAcc = clamp(faunaAcc, 0.0, 1.0);
+    faunaAcc = clamp(faunaAcc, 0.0, 1.0) * (1.0 - kf.x * 0.85);
     // Fog to local water colour: soft silhouette, never sticker-sharp.
     vec3 faunaCol = mix(waterLocal, vec3(0.78, 0.92, 0.96), 0.28);
     faunaLum = faunaAcc * faunaMaxAlpha;
@@ -541,6 +587,13 @@ void main() {
   if (uDebug == 16) {
     gl_FragColor = vec4(vec3(faunaLum), 1.0);
     return;
+  }
+
+  // P10.4 meniscus: soft water-tinted lip where a body-copy rect meets water.
+  // Analytic rim from the keep-out field, no extra tap; fades with depth.
+  if (uBlockCount > 0.5) {
+    vec3 meniscusCol = mix(uWaterTop, vec3(0.72, 0.90, 0.92), 0.5);
+    water += meniscusCol * (kf.y * 0.06 * uFx.z * under);
   }
 
   // Layer 5: Abyss glow - soft pulsing points, count uFx.w * T.glowMax (8), cool #35e0c2

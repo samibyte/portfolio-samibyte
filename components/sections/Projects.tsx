@@ -9,7 +9,7 @@ export function Projects() {
       aria-labelledby="projects-title"
       className="relative px-6 py-24"
     >
-      <div className="mx-auto w-full max-w-6xl">
+      <div data-water-block className="mx-auto w-full max-w-6xl">
         <h2
           id="projects-title"
           className="font-[family-name:var(--font-display)] text-[length:var(--fs-3xl)] leading-tight text-[var(--text)]"

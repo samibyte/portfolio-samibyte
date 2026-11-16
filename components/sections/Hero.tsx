@@ -12,7 +12,7 @@ export function Hero() {
     >
       <BuoyChip />
       <div className="absolute inset-x-0 top-[30%] -translate-y-1/2 px-6">
-        <div className="mx-auto w-full max-w-6xl">
+        <div data-water-block className="mx-auto w-full max-w-6xl">
           <p className="text-[length:var(--fs-xs)] uppercase tracking-[0.25em] text-[var(--text)]/70">
             {content.role} · {content.location}
           </p>

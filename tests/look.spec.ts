@@ -853,4 +853,63 @@ test.describe("P8 Look: Composition & Evidence", () => {
     await page.waitForTimeout(300);
     await expect(foreground).toHaveCount(0);
   });
+
+  // ── P10.4 Water-aware blocks ────────────────────────────────────────────────
+
+  test("P10.4 water blocks: debug 19 coverage > 0 at tier 0, 0 at tier 2; at most 8 cached rects", async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      (
+        window as unknown as { __oceanDebug?: { tier?: number; layer?: number } }
+      ).__oceanDebug = { tier: 0, layer: 19 };
+    });
+
+    await page.goto("/");
+    await page.waitForLoadState("load");
+    const canvas = page.locator("canvas[data-ocean-canvas]");
+    await canvas.waitFor({ state: "attached" });
+    await page.waitForTimeout(600);
+    await page.addStyleTag({
+      content:
+        "header, nav, main, aside, [data-foreground-canvas], [data-chrome], a[href='#main-content'] { opacity: 0 !important; }",
+    });
+    await page.waitForTimeout(100);
+
+    const blockCount = await page.locator("[data-water-block]").count();
+    expect(blockCount).toBeGreaterThan(0);
+    expect(blockCount).toBeLessThanOrEqual(8);
+
+    const measureCoverage = async (tier: number): Promise<number> => {
+      await page.evaluate((t: number) => {
+        (window as unknown as { __oceanDebug?: object }).__oceanDebug = {
+          tier: t,
+          layer: 19,
+        };
+      }, tier);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.waitForTimeout(400);
+
+      const shot = decode(await canvas.screenshot());
+      let lit = 0;
+      const total = shot.width * shot.height;
+      for (let y = 0; y < shot.height; y++) {
+        for (let x = 0; x < shot.width; x++) {
+          const [r, g, b] = shot.at(x, y);
+          if (r + g + b > 15) lit++;
+        }
+      }
+      return lit / total;
+    };
+
+    const covTier0 = await measureCoverage(0);
+    const covTier2 = await measureCoverage(2);
+
+    console.log(
+      `Debug layer 19 (keep-out): covTier0=${covTier0.toFixed(4)}, covTier2=${covTier2.toFixed(4)}, blocks=${blockCount}`,
+    );
+
+    expect(covTier0).toBeGreaterThan(0);
+    expect(covTier2).toBe(0);
+  });
 });

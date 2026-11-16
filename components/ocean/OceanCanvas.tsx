@@ -5,6 +5,7 @@ import { Renderer, Triangle, Program, Mesh } from "ogl";
 import { T } from "@/lib/tuning";
 import { onFrame, signal, refreshTier, tierSettings, readForcedTier } from "@/lib/signal";
 import { ZONES, bgAt, fxAt } from "@/lib/zones";
+import { MAX_WATER_BLOCKS, waterBlocks } from "@/lib/layout";
 import { VERT, FRAG } from "./shader";
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -116,6 +117,11 @@ export function OceanCanvas() {
       ];
       const uFxValue: [number, number, number, number] = [0, 0, 0, 0];
       const uMouseValue: [number, number] = [-1, -1];
+      // P10.4 keep-out rects: x0, y0, x1, y1 in screen uv, y up.
+      const uBlocksValue: [number, number, number, number][] = Array.from(
+        { length: MAX_WATER_BLOCKS },
+        () => [0, 0, 0, 0] as [number, number, number, number],
+      );
       const skyRgb = hexToRgb(ZONES[0].bgTop);
       const waterRgb = hexToRgb(ZONES[0].bgBot);
       const accentRgb = hexToRgb(ZONES[0].accent);
@@ -270,6 +276,8 @@ export function OceanCanvas() {
           ],
         },
         uBg: { value: uBgValue },
+        uBlocks: { value: uBlocksValue },
+        uBlockCount: { value: 0 as number },
         uFx: { value: uFxValue },
         uDebug: {
           value:
@@ -389,6 +397,30 @@ export function OceanCanvas() {
           uMouseValue[1] = -1;
         }
         uniforms.uMouseVel.value = signal.pointerSpring.x;
+
+        // 4b. uBlocks (P10.4): cached page-space body-copy rects -> screen uv.
+        //     Off at tier >= 2; the loop bound stays MAX_WATER_BLOCKS.
+        const blocks = waterBlocks();
+        const blockCount =
+          signal.tier >= 2
+            ? 0
+            : Math.min(blocks.length, MAX_WATER_BLOCKS);
+        for (let i = 0; i < MAX_WATER_BLOCKS; i++) {
+          const dst = uBlocksValue[i];
+          if (i < blockCount) {
+            const block = blocks[i];
+            dst[0] = block.x0;
+            dst[1] = 1 - (block.pageBottom - scrollY) / vh;
+            dst[2] = block.x1;
+            dst[3] = 1 - (block.pageTop - scrollY) / vh;
+          } else {
+            dst[0] = 0;
+            dst[1] = 0;
+            dst[2] = 0;
+            dst[3] = 0;
+          }
+        }
+        uniforms.uBlockCount.value = blockCount;
 
         // 5. uOct - T.octaves at full quality, T.octavesLow in tiers 1 and 2
         uniforms.uOct.value = settings.octaves;
